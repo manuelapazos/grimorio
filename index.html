@@ -396,7 +396,7 @@ input[type=range]{accent-color:var(--gold);width:100%}
 .sp-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.4rem .8rem;margin:.3rem 0 .6rem}
 .sp-meta dt{font-family:var(--fsc);font-size:.85rem;color:var(--muted)}
 .sp-meta dd{margin:0}
-.sp-desc p{margin:.4rem 0;max-width:72ch}
+.sp-desc p{margin:.4rem 0}
 .sp-link{background:none;border:none;padding:0;cursor:pointer;font-family:var(--fd);font-size:1.2rem;color:var(--ink);text-decoration:underline dotted var(--ink3);text-underline-offset:3px}
 .sp-link:hover{color:var(--crim)}
 /* contraste das opções dos menus de seleção */
@@ -432,7 +432,7 @@ select option:checked{background:var(--crim);color:#fbeede}
 .ei-price{font-family:var(--fd);font-size:1.05rem;color:var(--gold2);white-space:nowrap}
 .sheet .ei-price{color:#7d5a12}
 .ei-body{padding:0 0 .7rem 2rem}
-.ei-body p{margin:.35rem 0;max-width:70ch;line-height:1.55}
+.ei-body p{margin:.35rem 0;line-height:1.55}
 .ei-tools{display:flex;justify-content:flex-end;gap:.3rem;margin-top:.2rem}
 .pencil{color:var(--ink2)}
 .pencil.on{color:#fbeede;background:var(--green)}
@@ -486,7 +486,7 @@ select option:checked{background:var(--crim);color:#fbeede}
 .lu-feat.open .lu-feat-h svg{transform:rotate(90deg)}
 .lu-feat-h b{font-family:var(--fd);font-weight:500;font-size:1.25rem}
 .lu-desc{padding:0 1rem .6rem 2.2rem}
-.lu-desc p{margin:.35rem 0;max-width:70ch}
+.lu-desc p{margin:.35rem 0}
 .lu-choice{background:rgba(201,162,78,.06);border-left:3px solid var(--gold);padding:.7rem 1rem;border-radius:0 var(--r) var(--r) 0;margin-bottom:.9rem}
 .lu-choice h4{font-family:var(--fd);font-weight:500;font-size:1.3rem;margin:0 0 .5rem}
 .lu-choice .lu-desc{padding:.4rem 0 0}
@@ -623,6 +623,28 @@ select option:checked{background:var(--crim);color:#fbeede}
 .sp-traits details{border-bottom:1px solid var(--seam);padding:.35rem 0}
 .sp-traits summary{cursor:pointer;font-family:var(--fd);font-size:1.15rem}
 .sp-traits p{margin:.3rem 0 .3rem 1rem;color:var(--muted);line-height:1.5}
+.stat.conc{display:flex;flex-direction:column;align-items:center;gap:.35rem}
+.stat.conc.on{border-color:#6b4fa0;background:rgba(107,79,160,.12);box-shadow:inset 0 0 0 1px rgba(107,79,160,.35)}
+.conc-name{font-family:var(--fd);font-size:1.15rem;color:#4a2f7a;text-decoration:none;line-height:1.1}
+.sheet .conc-pill{background:rgba(107,79,160,.18);color:#4a2f7a;margin-left:.3rem}
+.deck-slot.concentrating .mcard{outline:3px solid #8a6cc4;outline-offset:2px;box-shadow:0 0 18px rgba(138,108,196,.55)}
+.stat.conc{display:flex;flex-direction:column;align-items:center;gap:.35rem}
+.stat.conc.on{border-color:#6b4fa0;background:rgba(107,79,160,.12);box-shadow:inset 0 0 0 1px rgba(107,79,160,.35)}
+.conc-name{font-family:var(--fd);font-size:1.15rem;color:#4a2f7a;text-decoration:none;line-height:1.1}
+.sheet .conc-pill{background:rgba(107,79,160,.18);color:#4a2f7a;margin-left:.3rem}
+.deck-slot.concentrating .mcard{outline:3px solid #8a6cc4;outline-offset:2px;box-shadow:0 0 18px rgba(138,108,196,.55)}
+.wsp-t{margin:1.1rem 0 .5rem;color:var(--gold2);font-size:1.25rem}
+.wsp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.5rem}
+.wsp{border:1px solid var(--seam);background:var(--stone3);border-radius:var(--r);padding:.5rem .7rem;display:flex;flex-direction:column;gap:.2rem}
+.wsp.on{border-color:var(--gold);background:rgba(201,162,78,.1)}
+.wsp-h{display:flex;align-items:baseline;gap:.45rem;cursor:pointer;flex-wrap:wrap}
+.wsp-h input{accent-color:var(--crim2);align-self:center}
+.wsp-h b{font-family:var(--fd);font-weight:500;font-size:1.15rem}
+.wsp .linklike{align-self:flex-start;color:var(--gold2)}
+.wsp-s{margin:0;font-size:.86rem;color:var(--muted);line-height:1.4}
+.wsp-d p{margin:.3rem 0;font-size:.9rem;line-height:1.5}
+.stat.roller{grid-column:1 / -1}
+@media (min-width:1100px){.stat.roller{grid-column:3 / -1}}
 </style></head><body><div id="app"></div><div id="bubble" class="bubble"></div><div id="modal"></div><div id="tray" class="tray"></div><div id="spot"></div><div class="toasts" id="toasts" aria-live="polite"></div><script>
 /* ===== Regras — Livro do Jogador 2024 (PT-BR) ===== */
 const ABIL = [
@@ -1043,7 +1065,8 @@ const Store = {
     return Local.watchDoc(path,cb);
   }
 };
-function dbError(where,e){ console.warn(where,e&&e.code,e&&e.message); if(e&&e.code==='permission-denied') toast('Sem permissão para ler estes dados. Confira as regras do Firestore.','err'); }
+let dbErrAt=0;
+function dbError(where,e){ console.warn(where,e&&e.code,e&&e.message); if(e&&e.code==='permission-denied'&&Date.now()-dbErrAt>15000&&S.screen==='camp'){ dbErrAt=Date.now(); toast('Sem permissão para ler estes dados. A campanha pode ter sido excluída ou as regras do Firestore precisam ser publicadas.','err'); } }
 
 /* ===== Autenticação: e-mail e senha do Firebase ===== */
 const AUTH_ERR = {
@@ -1199,6 +1222,31 @@ const IC = {
   castle:'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 42V18h6v5h5v-5h10v5h5v-5h6v24z"/><path d="M20 42v-9a4 4 0 0 1 8 0v9"/><path d="M8 18V10h6v8M34 18V10h6v8"/></svg>'
 };
 
+/* ===== Dados vindos do banco: nunca confiar no formato ===== */
+const num=v=>{ const n=Number(v); return isFinite(n)?n:0; };
+function safeImg(u){ u=typeof u==='string'?u:''; return /^data:image\/(png|jpe?g|webp|gif);base64,/.test(u)&&!/["'<>\s()\\]/.test(u)?u:''; }
+function cleanParts(ps){ return Array.isArray(ps)?ps.map(p=>p&&p.k!==undefined&&p.k!==null?{s:num(p.s)<0?-1:1,k:num(p.k)}:{s:num(p&&p.s)<0?-1:1,d:num(p&&p.d),r:(p&&Array.isArray(p.r)?p.r:[]).map(num),x:(p&&Array.isArray(p.x)?p.x:[]).map(num)}):[]; }
+function cleanRoll(r){
+  const o={...r,ts:num(r.ts),total:num(r.total),nat:r.nat==null?null:num(r.nat),lvl:num(r.lvl),slot:r.slot==null?null:num(r.slot),parts:cleanParts(r.parts),
+    secret:!!r.secret,conc:!!r.conc,expr:String(r.expr||''),label:String(r.label||''),byName:String(r.byName||''),who:String(r.who||''),name:String(r.name||''),school:String(r.school||''),text:String(r.text||''),art:r.art?String(r.art):null,ref:r.ref?String(r.ref):null,mode:r.mode?String(r.mode):null};
+  o.atk=r.atk?{expr:String(r.atk.expr||''),total:num(r.atk.total),nat:r.atk.nat==null?null:num(r.atk.nat),parts:cleanParts(r.atk.parts)}:null;
+  o.dmg=r.dmg?{expr:String(r.dmg.expr||''),total:num(r.dmg.total),parts:cleanParts(r.dmg.parts),crit:!!r.dmg.crit,heal:!!r.dmg.heal,sum:!!r.dmg.sum}:null;
+  o.save=r.save?{dc:num(r.save.dc),ab:String(r.save.ab||'')}:null;
+  o.multi=r.multi&&Array.isArray(r.multi.list)?{noun:String(r.multi.noun||''),list:r.multi.list.map(it=>({atk:it&&it.atk?{total:num(it.atk.total),nat:it.atk.nat==null?null:num(it.atk.nat)}:null,dmg:{total:num(it&&it.dmg&&it.dmg.total),crit:!!(it&&it.dmg&&it.dmg.crit)}}))}:null;
+  return o;
+}
+const SHEET_NUM=['xp','level','pendingLv','hpMax','hpCur','hpTemp','ac','initMisc','hdUsed','pb','atk'];
+function cleanSheet(s){
+  SHEET_NUM.forEach(k=>{ if(s[k]!==undefined&&s[k]!==null&&k!=='atk') s[k]=num(s[k]); });
+  if(s.ab) Object.keys(s.ab).forEach(k=>s.ab[k]=num(s.ab[k]));
+  if(s.coins) Object.keys(s.coins).forEach(k=>s.coins[k]=num(s.coins[k]));
+  if(s.slots) Object.keys(s.slots).forEach(k=>{ const v=s.slots[k]||{}; s.slots[k]={max:num(v.max),used:num(v.used)}; });
+  if(s.portrait) s.portrait=safeImg(s.portrait)||null;
+  if(Array.isArray(s.attacks)) s.attacks.forEach(a=>{ a.bonus=num(a.bonus); });
+  if(Array.isArray(s.actions)) s.actions.forEach(a=>{ a.atk=num(a.atk); });
+  return s;
+}
+
 /* ===== Estado ===== */
 const S = {
   me:null, screen:'boot', lobbyTab:'gm', authTab:'login', camps:[], covers:{},
@@ -1309,7 +1357,7 @@ async function loadCover(c){
   if(!c.coverV){ delete S.covers[c.id]; return; }
   if(S.covers[c.id]&&S.covers[c.id].v===c.coverV) return;
   if(coverPending[c.id]===c.coverV) return; coverPending[c.id]=c.coverV;
-  try{ const d=await Store.get('covers/'+c.id); if(d&&d.img){ S.covers[c.id]={v:c.coverV,img:d.img}; render(); } }catch(e){}
+  try{ const d=await Store.get('covers/'+c.id); const img=d&&safeImg(d.img); if(img){ S.covers[c.id]={v:c.coverV,img}; render(); } }catch(e){}
   delete coverPending[c.id];
 }
 function genCode(){ const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<6;i++) s+=a[rnd(a.length)-1]; return s; }
@@ -1359,10 +1407,10 @@ function openCamp(cid){
   }));
   campUnsubs.push(Store.watch(`campaigns/${cid}/sheets`,{},rows=>{
     if(S.campId!==cid) return;
-    S.sheets=rows.map(r=>WQ.has(sheetPath(r.id))?(sheetById(r.id)||r):r).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+    S.sheets=rows.map(r=>WQ.has(sheetPath(r.id))?(sheetById(r.id)||cleanSheet(r)):cleanSheet(r)).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
     render();
   }));
-  campUnsubs.push(Store.watch(`campaigns/${cid}/rolls`,{orderBy:['ts','desc'],limit:80},rows=>{ if(S.campId!==cid) return; S.rolls=rows; checkSpots(rows); if(S.bubbleOpen) S.seenTs=Date.now(); renderBubble(); }));
+  campUnsubs.push(Store.watch(`campaigns/${cid}/rolls`,{orderBy:['ts','desc'],limit:80},rows=>{ if(S.campId!==cid) return; S.rolls=rows.map(cleanRoll); checkSpots(S.rolls); if(S.bubbleOpen) S.seenTs=Date.now(); renderBubble(); }));
   campUnsubs.push(Store.watch(`campaigns/${cid}/rewards`,{orderBy:['ts','desc'],limit:100},rows=>{ if(S.campId!==cid) return; S.rewards=rows; if(S.campTab==='gm'&&S.gmSec==='recompensas') render(); }));
   render();
 }
@@ -1690,7 +1738,7 @@ const artCache={}, artLoading={};
 function artPath(id){ return `campaigns/${S.campId}/spellart/${id}`; }
 function artFor(item,sp){
   if(item&&item.art){ const c=artCache[item.art]; if(c) return c;
-    if(!artLoading[item.art]){ artLoading[item.art]=1; Store.get(artPath(item.art)).then(d=>{ if(d&&d.img){ artCache[item.art]=d.img; artRender(); } }).catch(()=>{}); } }
+    if(!artLoading[item.art]){ artLoading[item.art]=1; Store.get(artPath(item.art)).then(d=>{ const img=d&&safeImg(d.img); if(img){ artCache[item.art]=img; artRender(); } }).catch(()=>{}); } }
   return defaultArt(sp&&sp.e);
 }
 let artT=null; function artRender(){ clearTimeout(artT); artT=setTimeout(()=>{ render(); renderSpot(); },80); }
@@ -1715,7 +1763,7 @@ function spellDeck(sh){
   return lv.map(l=>{ const closed=!!(S.deckClosed||{})[sh.id+':'+l];
     return `<section class="deck-group"><button class="deck-h" data-act="deckToggle" data-v="${l}" data-id="${sh.id}" aria-expanded="${!closed}">${IC.chev}<span>${l===0?'Truques':l+'º círculo'}</span><span class="small muted">${groups[l].length}</span></button>
       ${closed?'':`<div class="deck">${groups[l].map(({x,i})=>{ const sp=spellOf(x); const art=artFor(x,sp);
-        return `<div class="deck-slot ${x.prep?'prep':''}">
+        return `<div class="deck-slot ${x.prep?'prep':''} ${sh.conc&&sh.conc.name===sp.n?'concentrating':''}">
           <button class="deck-card" data-act="deckOpen" data-v="${i}" data-id="${sh.id}" aria-label="Ver carta de ${h(sp.n)}">${spellCard(sp,{art})}</button>
           <div class="deck-side">
             <button class="dice-btn big" data-act="castSpell" data-v="${i}" data-id="${sh.id}" title="Conjurar e mostrar para a mesa" aria-label="Conjurar ${h(sp.n)}">${IC.d20}</button>
@@ -1741,7 +1789,9 @@ function spotResults(r){ const b=[];
   if(r.slot&&r.lvl>0) b.push(`<span class="spot-chip">${r.mode==='ritual'?'Ritual':r.mode==='free'?'Sem espaço':r.slot+'º círculo'}</span>`);
   if(r.atk) b.push(`<span class="spot-chip ${r.atk.nat===20?'crit':r.atk.nat===1?'fumb':''}">Ataque <b>${r.atk.total}</b></span>`);
   if(r.save) b.push(`<span class="spot-chip">CD <b>${r.save.dc}</b> ${h(r.save.ab)}</span>`);
-  if(r.dmg) b.push(`<span class="spot-chip">${r.dmg.heal?'Cura':'Dano'}${r.dmg.crit?' crítico':''} <b>${r.dmg.total}</b></span>`);
+  if(r.multi){ r.multi.list.forEach((it,i)=>b.push(`<span class="spot-chip ${it.atk&&it.atk.nat===20?'crit':it.atk&&it.atk.nat===1?'fumb':''}">${h(r.multi.noun)} ${i+1}: ${it.atk?`atq <b>${it.atk.total}</b> · `:''}<b>${it.dmg.total}</b></span>`)); if(!r.multi.list[0].atk) b.push(`<span class="spot-chip">Total <b>${r.dmg.total}</b></span>`); }
+  else if(r.dmg) b.push(`<span class="spot-chip">${r.dmg.heal?'Cura':'Dano'}${r.dmg.crit?' crítico':''} <b>${r.dmg.total}</b></span>`);
+  if(r.conc) b.push('<span class="spot-chip">Concentração</span>');
   return b.length?`<span class="spot-res">${b.join('')}</span>`:''; }
 function checkSpots(rows){
   if(!S.spotInit){ rows.forEach(r=>S.spotSeen[r.id]=1); S.spotInit=true; return; }
@@ -1813,6 +1863,24 @@ function spellMath(sp,sh,slot){
   out.atk=/jogada de ataque mágico|ataque mágico (corpo a corpo|à distância)/i.test(d);
   const sv=d.match(/salvaguarda de (Força|Destreza|Constituição|Inteligência|Sabedoria|Carisma)/); if(sv) out.save=sv[1];
   const m=d.match(/\b(\d+)d(\d+)(?:\s*\+\s*(\d+)\b)?/); if(!m) return out;
+  // Magias de vários projéteis: dardos que sempre acertam ou raios com um ataque cada
+  const W={um:1,uma:1,dois:2,duas:2,'três':3,quatro:4};
+  const proj=d.match(/(?:cria|dispara|emite)\s+(um|uma|dois|duas|três|quatro)\s+(dardos?|raios?|feixes?)/i);
+  const beams=sp.l===0&&/cria dois feixes no nível 5/.test(d);
+  if(proj||beams){
+    let n=proj?W[proj[1].toLowerCase()]:1; const lvl0=shLevel(sh);
+    if(beams) n=lvl0>=17?4:lvl0>=11?3:lvl0>=5?2:1;
+    const up=d.match(/um (?:dardo|raio|feixe) adicional para cada círculo de espaço de magia acima de (\d)/);
+    if(up&&slot>+up[1]) n+=slot-(+up[1]);
+    if(n>1){
+      const flat=m[3]?+m[3]:0; const per=`${m[1]}d${m[2]}${flat?'+'+flat:''}`;
+      const noun=proj?proj[2].replace(/s$/,''):'feixe';
+      out.multi={n,per,noun,atk:out.atk}; out.expr=`${n} × ${per}`;
+      out.note.push(`${n} ${noun}${n>1?'s':''}${out.atk?', um ataque cada':', acertam automaticamente'}`);
+      if(sp.l>0&&slot>sp.l) out.note.push(`${slot}º círculo`);
+      return out;
+    }
+  }
   let n=+m[1]; const die=+m[2]; const flat=m[3]?+m[3]:0; let extra='';
   const lvl=shLevel(sh);
   if(sp.l===0&&/Aprimoramento de Truque/.test(d)){ const tier=lvl>=17?4:lvl>=11?3:lvl>=5?2:1; if(tier>1){ n*=tier; out.note.push(`truque no nível ${lvl}`); } }
@@ -1842,6 +1910,7 @@ function viewCast(){
   const eff=mode==='slot'?slot:sp.l; const mt=spellMath(sp,sh,eff); const dc=spellDC(sh);
   const noSlots=!opts.some(o=>o.left>0);
   return `<div class="modal cast-modal"><div class="row"><div class="grow"><h2>Conjurar ${h(sp.n)}</h2><p class="muted" style="margin:0">${sp.l}º círculo · ${h(sp.e||'Magia')} · ${h(sp.ct||'')}</p></div><button class="icon-btn" data-act="closeModal" aria-label="Fechar">${IC.x}</button></div>
+    ${/Concentração/.test(sp.du||'')&&sh.conc&&sh.conc.name&&sh.conc.name!==sp.n?`<p class="cast-warn">Você está concentrado em <b>${h(sh.conc.name)}</b>. Conjurar ${h(sp.n)} encerra essa concentração.</p>`:''}
     <h3 class="cast-h">Como conjurar</h3>
     <div class="cast-slots">${opts.map(o=>`<button class="cast-slot" data-act="castSlot" data-v="${o.l}" aria-pressed="${mode==='slot'&&slot===o.l}" ${o.left?'':'disabled'}><b>${o.l}º</b><span>${o.left} de ${(sh.slots[o.l]||{}).max} livre${o.left===1?'':'s'}</span></button>`).join('')||'<p class="muted">Esta ficha não tem espaços de magia deste círculo ou maior.</p>'}</div>
     ${noSlots&&opts.length?'<p class="cast-warn">Todos os espaços deste círculo ou maior estão gastos. Um descanso longo recupera.</p>':''}
@@ -1856,14 +1925,39 @@ function viewCast(){
 async function performCast(sh,idx,mode,slot){
   const x=sh.spells[idx], sp=spellOf(x); const eff=sp.l===0?0:(mode==='slot'?slot:sp.l);
   if(sp.l>0&&mode==='slot'){ if(!slotsLeft(sh,slot)){ toast('Não há espaço livre desse círculo.','err'); return; } sh.slots[slot].used=(+sh.slots[slot].used||0)+1; saveNow(sh); }
-  const mt=spellMath(sp,sh,eff); const rec={kind:'spell',ts:Date.now(),by:S.me.id,byName:S.me.name,who:rollName(sh),name:sp.n,ref:x.ref||null,lvl:sp.l,slot:eff||null,mode:sp.l?mode:null,school:sp.e||'',text:x.ref?'':String(sp.d||'').slice(0,400),art:x.art||null,dmg:null,atk:null,save:null};
+  const isConc=/Concentração/.test(sp.du||''); let ended='';
+  if(isConc&&canEdit(sh)){ if(sh.conc&&sh.conc.name&&sh.conc.name!==sp.n) ended=sh.conc.name; sh.conc={name:sp.n,ts:Date.now()}; saveNow(sh); }
+  const mt=spellMath(sp,sh,eff); const rec={kind:'spell',conc:isConc,ts:Date.now(),by:S.me.id,byName:S.me.name,who:rollName(sh),name:sp.n,ref:x.ref||null,lvl:sp.l,slot:eff||null,mode:sp.l?mode:null,school:sp.e||'',text:x.ref?'':String(sp.d||'').slice(0,400),art:x.art||null,dmg:null,atk:null,save:null};
   try{
-    if(mt.atk){ const a=rollExpr(withMod(d20(),spellAtkBonus(sh))); rec.atk={expr:withMod(d20(),spellAtkBonus(sh)),total:a.total,parts:a.parts,nat:a.nat}; }
-    if(mt.expr){ const crit=rec.atk&&rec.atk.nat===20; const e=crit?critExpr(mt.expr):mt.expr; const r=rollExpr(e); rec.dmg={expr:e,total:Math.max(0,r.total),parts:r.parts,crit,heal:mt.heal}; }
+    if(mt.multi){ const list=[]; let tot=0;
+      for(let i=0;i<mt.multi.n;i++){ const it={}; if(mt.multi.atk){ const a=rollExpr(withMod(d20(),spellAtkBonus(sh))); it.atk={total:a.total,nat:a.nat}; }
+        const crit=it.atk&&it.atk.nat===20; const e=crit?critExpr(mt.multi.per):mt.multi.per; const r=rollExpr(e); it.dmg={total:Math.max(0,r.total),crit,expr:e}; tot+=it.dmg.total; list.push(it); }
+      rec.multi={noun:mt.multi.noun,list}; rec.dmg={expr:mt.expr,total:tot,parts:[],crit:false,heal:false,sum:true}; }
+    else if(mt.atk){ const a=rollExpr(withMod(d20(),spellAtkBonus(sh))); rec.atk={expr:withMod(d20(),spellAtkBonus(sh)),total:a.total,parts:a.parts,nat:a.nat}; }
+    if(mt.expr&&!mt.multi){ const crit=rec.atk&&rec.atk.nat===20; const e=crit?critExpr(mt.expr):mt.expr; const r=rollExpr(e); rec.dmg={expr:e,total:Math.max(0,r.total),parts:r.parts,crit,heal:mt.heal}; }
   }catch(e){ console.warn(e); }
   if(mt.save){ const dc=spellDC(sh); if(dc) rec.save={ab:mt.save,dc}; }
   const id='r'+String(rec.ts).padStart(14,'0')+Math.random().toString(36).slice(2,6); S.spotSeen[id]=1; showSpot({id,...rec}); render();
+  if(ended) toast(`Concentração em ${ended} encerrada: agora ${sp.n}.`);
   try{ await Store.set(`campaigns/${S.campId}/rolls/${id}`,rec); }catch(e){ toast('Não foi possível mostrar a magia para a mesa.','err'); }
+}
+
+/* ===== Concentração ===== */
+function concDC(dmg){ return Math.min(30,Math.max(10,Math.floor(dmg/2))); }
+function concBonus(sh){ return mod(sh.ab.con)+(sh.saves&&sh.saves.con?pbOf(sh):0); }
+function concBox(sh){
+  const c=sh.conc&&sh.conc.name?sh.conc:null;
+  return `<div class="stat conc ${c?'on':''}"><span class="lab">Concentração</span>
+    ${c?`<button class="linklike conc-name" data-act="concInfo" data-v="${h(c.name)}">${h(c.name)}</button>${ED?`<button class="btn sm" data-act="concEnd" data-id="${sh.id}">Encerrar</button>`:''}`:'<div class="small muted" style="margin-top:.5rem">Nenhuma magia</div>'}</div>`;
+}
+function viewConc(){
+  const m=S.modal, sh=sheetById(m.sid); if(!sh) return ''; const cname=m.name||(sh.conc&&sh.conc.name)||'magia';
+  const b=concBonus(sh);
+  return `<div class="modal"><h2>Manter a concentração?</h2>
+    <p>${h(sh.name||'Personagem')} sofreu <b>${m.dmg}</b> de dano enquanto se concentra em <b>${h(cname)}</b>.</p>
+    <p class="muted">Salvaguarda de Constituição, CD <b>${m.dc}</b> (10 ou metade do dano, o que for maior). Bônus ${sgn(b)}.</p>
+    ${m.res?`<div class="cast-prev"><div><span class="lab">Resultado</span><b>${m.res.total}</b><small>${m.res.total>=m.dc?'Concentração mantida':'Concentração perdida'}</small></div></div>`:''}
+    <div class="foot">${m.res?`<button class="btn primary" data-act="closeModal">Fechar</button>`:`<button class="btn ghost" data-act="concEnd" data-id="${sh.id}">Encerrar sem rolar</button><button class="btn ghost" data-act="closeModal">Manter sem rolar</button><button class="btn primary" data-act="concRoll">${IC.d20} Rolar salvaguarda</button>`}</div></div>`;
 }
 /* ===== Render com preservação de foco ===== */
 function preserve(fn){
@@ -2072,7 +2166,8 @@ function renderBubble(){
       ${r.kind==='spell'?`<div class="lb">${h(r.who?r.who+' conjura ':'Conjura ')}<button class="linklike" data-act="spotReplay" data-v="${r.id}">${h(r.name)}</button>${r.slot&&r.lvl>0?` <span class="small">(${r.mode==='ritual'?'ritual':r.mode==='free'?'sem espaço':r.slot+'º círculo'})</span>`:''}</div>
         ${r.atk?`<div class="res"><span class="k">Ataque</span><span class="tot ${r.atk.nat===20?'crit':r.atk.nat===1?'fumb':''}">${r.atk.total}</span><span class="det">${h(r.atk.expr)} = ${detailHTML(r.atk.parts||[])}</span></div>`:''}
         ${r.save?`<div class="res"><span class="k">CD</span><span class="tot">${r.save.dc}</span><span class="det">salvaguarda de ${h(r.save.ab)}</span></div>`:''}`:r.label?`<div class="lb">${h(r.label)}</div>`:''}${r.kind==='spell'?'':`<div class="res">${r.dmg?'<span class="k">Ataque</span>':''}<span class="tot ${r.nat===20?'crit':r.nat===1?'fumb':''}">${r.total}</span><span class="det">${h(r.expr)} = ${detailHTML(r.parts||[])}</span></div>`}
-      ${r.dmg?`<div class="res"><span class="k">${r.dmg.heal?'Cura':'Dano'}${r.dmg.crit?' crítico':''}</span><span class="tot">${r.dmg.total}</span><span class="det">${h(r.dmg.expr)} = ${detailHTML(r.dmg.parts||[])}</span></div>`:''}</div>`).join('')
+      ${r.multi?`<div class="res"><span class="det">${r.multi.list.map((it,i)=>`${h(r.multi.noun)} ${i+1}: ${it.atk?`ataque <b class="${it.atk.nat===20?'crit':it.atk.nat===1?'fumb':''}">${it.atk.total}</b>, `:''}dano <b>${it.dmg.total}</b>${it.dmg.crit?' (crítico)':''}`).join(' · ')}${r.multi.list[0]&&!r.multi.list[0].atk?` · total <b>${r.dmg.total}</b>`:''}</span></div>`:''}
+      ${r.dmg&&!r.multi?`<div class="res"><span class="k">${r.dmg.heal?'Cura':'Dano'}${r.dmg.crit?' crítico':''}</span><span class="tot">${r.dmg.total}</span><span class="det">${h(r.dmg.expr)} = ${detailHTML(r.dmg.parts||[])}</span></div>`:''}</div>`).join('')
       :'<p class="muted" style="color:var(--ink3)">Nenhuma rolagem ainda. Role pela ficha, pela área do mestre ou aqui embaixo.</p>'}</div>
     <form class="quick" data-form="quick"><input aria-label="Rolagem rápida" placeholder="1d20+3" data-s="quick" data-k="quick" value="${h(S.quick)}"><button type="submit">Rolar</button></form></section>`; });
 }
@@ -2146,6 +2241,7 @@ function pcBody(sh){
       <button class="btn sm" style="margin-top:.3rem" data-act="rollDeath" data-id="${sh.id}">Rolar</button></div>
     <div class="stat"><span class="lab">Inspiração Heroica</span><div style="margin-top:.6rem"><button class="pip ${sh.insp?'on':''}" style="width:34px;height:34px" data-act="insp" data-id="${sh.id}" ${ED?'':'disabled'} aria-pressed="${!!sh.insp}" aria-label="Inspiração heroica"></button></div>
       ${ED?`<div class="row" style="justify-content:center;margin-top:.5rem"><button class="btn sm" data-act="rest" data-v="short" data-id="${sh.id}">Descanso curto</button><button class="btn sm" data-act="rest" data-v="long" data-id="${sh.id}">Descanso longo</button></div>`:''}</div>
+    ${concBox(sh)}
     ${sheetRoller(sh)}
   </section>
   ${ED?'':`<p class="readonly-note">Esta ficha é de outro jogador. Você pode ver, mas não alterar.</p>`}
@@ -2198,7 +2294,7 @@ function castCountsHTML(sh){ const c=castCounts(sh); if(!c) return '';
 function spellList(sh,lv){
   return (sh.spells||[]).length?(sh.spells.map((s,i)=>({s,i})).sort((a,b)=>(spellOf(a.s).l-spellOf(b.s).l)||String(a.s.name).localeCompare(String(b.s.name),'pt')).map(({s,i})=>`<div class="spell">
       ${spellOf(s).l===0?'<span class="small muted" title="Truques estão sempre preparados">—</span>':`<label class="check small" title="Preparada"><input type="checkbox" data-b="spells.${i}.prep" data-sid="${sh.id}" data-k="${sh.id}:spells.${i}.prep" ${s.prep?'checked':''} ${ED?'':'disabled'} aria-label="Preparada"></label>`}
-      <div>${s.ref&&SPELL_BY[s.ref]?`<div class="row" style="gap:.4rem"><button class="sp-link" data-act="spellInfo" data-v="${h(s.ref)}">${h(s.ref)}</button><span class="small muted">${h(SPELL_BY[s.ref].e)} · ${h(SPELL_BY[s.ref].ct)} · ${h(SPELL_BY[s.ref].rg)}</span>${spellTags(SPELL_BY[s.ref])}${(()=>{ const mt=spellMath(SPELL_BY[s.ref],sh,SPELL_BY[s.ref].l); return `<button class="roll-chip cast-chip" data-act="castSpell" data-v="${i}" data-id="${sh.id}" title="Conjurar">${IC.d20}${mt.expr?' '+h(mt.expr):' Conjurar'}</button>`; })()}</div>`
+      <div>${s.ref&&SPELL_BY[s.ref]?`<div class="row" style="gap:.4rem"><button class="sp-link" data-act="spellInfo" data-v="${h(s.ref)}">${h(s.ref)}</button>${sh.conc&&sh.conc.name===s.ref?'<span class="pill conc-pill">concentrando</span>':''}<span class="small muted">${h(SPELL_BY[s.ref].e)} · ${h(SPELL_BY[s.ref].ct)} · ${h(SPELL_BY[s.ref].rg)}</span>${spellTags(SPELL_BY[s.ref])}${(()=>{ const mt=spellMath(SPELL_BY[s.ref],sh,SPELL_BY[s.ref].l); return `<button class="roll-chip cast-chip" data-act="castSpell" data-v="${i}" data-id="${sh.id}" title="Conjurar">${IC.d20}${mt.expr?' '+h(mt.expr):' Conjurar'}</button>`; })()}</div>`
         :bi(sh,`spells.${i}.name`,{label:'Nome da magia',ph:'Mísseis Mágicos'})}<div class="small">${bi(sh,`spells.${i}.notes`,{label:'Notas',ph:'anotações (ex.: dano 3d4+3)'})}</div></div>
       <div>${s.ref&&SPELL_BY[s.ref]?`<span class="small">${SPELL_BY[s.ref].l===0?'Truque':SPELL_BY[s.ref].l+'º círculo'}</span>`:bs(sh,`spells.${i}.lvl`,lv.map(l=>[l,l===0?'Truque':l+'º círculo']),{label:'Círculo',empty:'Círculo'})}</div>
       <div>${ED?`<button class="icon-btn" data-act="delSpell" data-v="${i}" data-id="${sh.id}" aria-label="Remover magia">${IC.trash}</button>`:''}</div></div>`).join('')):'<p class="muted">Nenhuma magia ainda. Clique em “+ Magia” para escolher do livro. A caixa marca as magias preparadas.</p>';
@@ -2280,6 +2376,7 @@ function renderModal(){
     <div class="foot"><button type="button" class="btn ghost" data-act="closeModal">Cancelar</button><button class="btn primary" type="submit">Aplicar</button></div></form>`; }
   else if(m.type==='levelup') inner=viewLevelUp();
   else if(m.type==='cast') inner=viewCast();
+  else if(m.type==='conc') inner=viewConc();
   else if(m.type==='spellCard') inner=`<div class="card-modal">${spellCard(m.sp,{art:m.art,big:true,dice:m.dice||'',by:m.by||''})}<div class="foot" style="justify-content:center"><button class="btn" data-act="closeModal">Fechar</button></div></div>`;
   else if(m.type==='cover'||m.type==='portrait'||m.type==='spellart'){ const pt=m.type==='portrait', sa=m.type==='spellart';
     inner=`<div class="modal wide"><h2>${sa?'Imagem da carta':pt?'Retrato do personagem':'Capa da campanha'}</h2><p class="muted">${sa?'Formato 3:2 (arte da carta).':pt?'Formato 3:4 (retrato).':'Formato 16:9.'} Arraste a imagem para enquadrar e use o controle para aproximar.</p>
@@ -2354,9 +2451,11 @@ async function saveCover(){
 
 /* ===== Assistente de Criação ===== */
 let W=null;
-const STEPS=['Classe','Origem','Atributos','Perícias','Equipamento','Detalhes','Revisão'];
+const STEP_DEF=[['cls','Classe'],['orig','Origem'],['abil','Atributos'],['skill','Perícias'],['spell','Magias'],['equip','Equipamento'],['det','Detalhes'],['rev','Revisão']];
+function wSteps(){ const c=CLASSES[W&&W.cls]; const hasSpells=!!(c&&CAST_COUNTS[W.cls]); return STEP_DEF.filter(([k])=>k!=='spell'||hasSpells); }
+function wKey(){ const s=wSteps(); return (s[Math.min(W.step,s.length-1)]||s[0])[0]; }
 const STD=[15,14,13,12,10,8];
-function newWizard(owner){ return {step:0,owner,cls:'',bg:'',sp:'',method:'padrao',asg:null,pool:null,asgR:null,pb:{for:8,des:8,con:8,int:8,sab:8,car:8},bm:'21',p2:'',p1:'',skills:[],spSk:[],ceq:0,beq:'A',name:'',align:'',langs:[],appearance:'',story:''}; }
+function newWizard(owner){ return {step:0,owner,cls:'',bg:'',sp:'',method:'padrao',asg:null,pool:null,asgR:null,pb:{for:8,des:8,con:8,int:8,sab:8,car:8},bm:'21',p2:'',p1:'',skills:[],spSk:[],cantrips:[],spells1:[],ceq:0,beq:'A',name:'',align:'',langs:[],appearance:'',story:''}; }
 function rankAbs(){ const a=CLASSES[W.cls]?CLASSES[W.cls].arr:{for:15,des:14,con:13,int:12,sab:10,car:8}; return ABIL.map(x=>x[0]).sort((p,q)=>a[q]-a[p]); }
 function ensureAsg(){
   const r=rankAbs();
@@ -2378,26 +2477,28 @@ function finalAbs(){ const b=baseAbs(), p=bonusAbs(); const o={}; ABIL.forEach((
 const pbSpent=()=>ABIL.reduce((a,[k])=>a+POINT_COST[W.pb[k]],0);
 function stepOK(){
   const c=CLASSES[W.cls];
-  switch(W.step){
-    case 0: return W.cls?'':'Escolha uma classe.';
-    case 1: return !W.bg?'Escolha um antecedente.':!W.sp?'Escolha uma espécie.':'';
-    case 2: if(W.method==='compra'&&pbSpent()>27) return 'Você gastou mais de 27 pontos.'; if(W.method==='rolagem'&&!W.pool) return 'Role os valores de atributo.'; if(W.bm==='21'&&W.p1===W.p2) return 'Escolha atributos diferentes para +2 e +1.'; return '';
-    case 3: { const need=c.ns; if(W.skills.length<need) return `Escolha mais ${need-W.skills.length} perícia(s) da classe.`; const sc=SPECIES[W.sp]&&SPECIES[W.sp].skC; if(sc&&W.spSk.length<sc.n) return `Escolha ${sc.n-W.spSk.length} perícia(s) da espécie.`; return ''; }
-    case 4: return '';
-    case 5: return W.name.trim()?'':'Dê um nome ao personagem.';
+  switch(wKey()){
+    case 'cls': return W.cls?'':'Escolha uma classe.';
+    case 'orig': return !W.bg?'Escolha um antecedente.':!W.sp?'Escolha uma espécie.':'';
+    case 'abil': if(W.method==='compra'&&pbSpent()>27) return 'Você gastou mais de 27 pontos.'; if(W.method==='rolagem'&&!W.pool) return 'Role os valores de atributo.'; if(W.bm==='21'&&W.p1===W.p2) return 'Escolha atributos diferentes para +2 e +1.'; return '';
+    case 'skill': { const need=c.ns; if(W.skills.length<need) return `Escolha mais ${need-W.skills.length} perícia(s) da classe.`; const sc=SPECIES[W.sp]&&SPECIES[W.sp].skC; if(sc&&W.spSk.length<sc.n) return `Escolha ${sc.n-W.spSk.length} perícia(s) da espécie.`; return ''; }
+    case 'equip': return '';
+    case 'spell': { const q=wSpellQuota(); if(W.cantrips.length<q.cant) return `Escolha mais ${q.cant-W.cantrips.length} truque(s).`; if(W.spells1.length<q.spells) return `Escolha mais ${q.spells-W.spells1.length} magia(s) de 1º círculo.`; return ''; }
+    case 'det': return W.name.trim()?'':'Dê um nome ao personagem.';
     default: return '';
   }
 }
 function viewWizard(){
   ensureAsg();
-  const body=[wzClass,wzOrigin,wzAbil,wzSkills,wzEquip,wzDetails,wzReview][W.step]();
+  const steps=wSteps(); const key=wKey(); const last=W.step>=steps.length-1;
+  const body={cls:wzClass,orig:wzOrigin,abil:wzAbil,skill:wzSkills,spell:wzSpells,equip:wzEquip,det:wzDetails,rev:wzReview}[key]();
   const err=stepOK();
-  return `<div class="wiz" role="document"><div class="wiz-steps">${STEPS.map((s,i)=>`<div class="${i===W.step?'on':i<W.step?'done':''}"><b>${i+1}</b>${s}</div>`).join('')}</div>
+  return `<div class="wiz" role="document"><div class="wiz-steps">${steps.map(([k,s],i)=>`<div class="${i===W.step?'on':i<W.step?'done':''}"><b>${i+1}</b>${s}</div>`).join('')}</div>
     <div class="wiz-body" data-scroll="wiz">${body}</div>
     <div class="wiz-foot"><button class="btn ghost" data-act="closeModal">Cancelar</button><span class="grow"></span>
       ${err?`<span class="small muted" style="align-self:center">${h(err)}</span>`:''}
       ${W.step>0?`<button class="btn" data-act="wPrev">${IC.back} Voltar</button>`:''}
-      ${W.step<6?`<button class="btn primary" data-act="wNext" ${err?'disabled':''}>Próximo</button>`:`<button class="btn gold" data-act="wCreate">Criar personagem</button>`}</div></div>`;
+      ${!last?`<button class="btn primary" data-act="wNext" ${err?'disabled':''}>Próximo</button>`:`<button class="btn gold" data-act="wCreate">Criar personagem</button>`}</div></div>`;
 }
 function wzClass(){
   const c=CLASSES[W.cls];
@@ -2464,6 +2565,20 @@ function spSkillsHTML(bgs){
 }
 function eqList(items){ return items.length?`<ul class="eq-items">${items.map(it=>{ const wpn=WEAPONS[eqItemName(it)], arm=ARMOR[it];
   return `<li>${h(it)}${wpn?` <span class="small muted">${wpn.d} ${wpn.t.toLowerCase()}</span>`:''}${arm?` <span class="small muted">CA ${arm.ac}${arm.dex===99?' + Des':arm.dex?' + Des (máx. 2)':''}</span>`:''}${it==='Escudo'?' <span class="small muted">+2 CA</span>':''}</li>`; }).join('')}</ul>`:'<p class="small muted" style="margin:.3rem 0">Só ouro, para comprar o que quiser (capítulo 6).</p>'; }
+function wSpellQuota(){ const t=CAST_COUNTS[W.cls]; if(!t) return {cant:0,spells:0,prep:0}; const [cant,prep]=t[0]; return {cant,prep,spells:W.cls==='mago'?6:prep}; }
+function wzSpells(){
+  const c=CLASSES[W.cls], q=wSpellQuota(); const open=W.spOpen;
+  const list=l=>SPELLS.filter(s=>s.l===l&&s.c.includes(W.cls));
+  const row=(s,key,max)=>{ const on=W[key].includes(s.n); const dis=!on&&W[key].length>=max;
+    return `<div class="wsp ${on?'on':''}"><label class="wsp-h"><input type="checkbox" data-act-change="wSpell" data-f="${key}" value="${h(s.n)}" ${on?'checked':''} ${dis?'disabled':''}>
+      <b>${h(s.n)}</b><span class="small muted">${h(s.e)}${/Concentração/.test(s.du)?' · C':''}${/Ritual/.test(s.ct)?' · R':''}</span></label>
+      <button class="linklike small" data-act="wSpOpen" data-v="${h(s.n)}">${open===s.n?'ocultar':'ler'}</button>
+      ${open===s.n?`<div class="wsp-d">${paras(s.d)}</div>`:`<p class="wsp-s">${h(shortText(s.d,130))}</p>`}</div>`; };
+  return `<h2>Escolha suas magias</h2>
+    <p class="muted">No nível 1, ${c.n} ${q.cant?`conhece <b>${q.cant}</b> truques e `:''}${W.cls==='mago'?`tem <b>6</b> magias de 1º círculo no Livro de Magias, das quais prepara <b>${q.prep}</b> por dia. As 4 primeiras escolhidas entram como preparadas.`:`prepara <b>${q.prep}</b> magias de 1º círculo.`} Dá para trocar depois pela aba Magias.</p>
+    ${q.cant?`<h3 class="wsp-t">Truques <span class="small muted">${W.cantrips.length}/${q.cant}</span></h3><div class="wsp-grid">${list(0).map(s=>row(s,'cantrips',q.cant)).join('')}</div>`:''}
+    <h3 class="wsp-t">Magias de 1º círculo <span class="small muted">${W.spells1.length}/${q.spells}</span></h3><div class="wsp-grid">${list(1).map(s=>row(s,'spells1',q.spells)).join('')}</div>`;
+}
 function wzEquip(){
   const c=CLASSES[W.cls], bg=BACKGROUNDS[W.bg], opts=CLASS_EQ[W.cls], be=BG_EQ[W.bg];
   const letters='ABC'; const pc=buildPC(); const sp=SPECIES[W.sp];
@@ -2495,6 +2610,7 @@ function wzReview(){
     <div class="arr-grid">${ABIL.map(([k,n])=>`<div class="arr-cell"><div class="lab">${n}</div><div class="big">${pc.ab[k]}</div><div class="small muted">${sgn(mod(pc.ab[k]))}${pc.saves[k]?' · salvaguarda':''}</div></div>`).join('')}</div>
     <div class="grid2"><div class="detail"><ul><li>Pontos de Vida: ${pc.hpMax}</li><li>Classe de Armadura: ${pc.ac}</li><li>Deslocamento: ${pc.speed}</li><li>Dado de Vida: ${pc.hd}</li><li>Bônus de proficiência: +2</li></ul></div>
       <div class="detail"><ul><li>Perícias: ${Object.keys(pc.skills).map(k=>SKN[k]).join(', ')}</li><li>Talento: ${h(pc.featsList.map(f=>f.name).join(', '))}</li><li>Idiomas: ${h(pc.langs)}</li></ul></div></div>
+    ${pc.spells.length?`<div class="detail"><b>Magias</b><p class="small" style="margin:.3rem 0 0">${W.cantrips.length?'Truques: '+h(W.cantrips.join(', '))+'<br>':''}1º círculo: ${h(W.spells1.join(', '))}</p></div>`:''}
     <div class="detail"><b>Equipamento (${pc.coins.po} PO)</b><p class="small" style="margin:.3rem 0 0">${h(pc.items.map(i=>(i.qty>1?i.qty+' ':'')+i.name).join(', '))||'Só ouro.'}</p></div>`;
 }
 function buildPC(){
@@ -2520,6 +2636,7 @@ function buildPC(){
   pc.profs=`${c.train}\nFerramenta (${bg.n}): ${bg.tool}`;
   pc.langs=['Comum',...W.langs].join(', ');
   pc.appearance=W.appearance; pc.story=W.story;
+  pc.spells=[...W.cantrips.map(n=>({id:rid('x'),name:n,ref:n,lvl:'0',prep:true,notes:''})),...W.spells1.map((n,i)=>({id:rid('x'),name:n,ref:n,lvl:'1',prep:W.cls==='mago'?i<wSpellQuota().prep:true,notes:''}))];
   const seen=new Set(); pc.attacks=[];
   items.forEach(it=>{ const n=eqItemName(it); if(seen.has(n)) return; const at=weaponAttack(n,ab); if(at){ seen.add(n); pc.attacks.push(at); } });
   pc.attacks.push(sp.un?{id:rid('x'),name:sp.un.n,ab:'for',prof:true,bonus:0,dmg:'1d6',addMod:true,type:sp.un.t+' · Ataque Desarmado'}:{id:rid('x'),name:'Ataque Desarmado',ab:'for',prof:true,bonus:0,dmg:'1',addMod:true,type:'Contundente'});
@@ -2635,6 +2752,10 @@ const A = {
     if(sp.l===0){ performCast(s,i,'free',0); return; }
     if(!canEdit(s)){ performCast(s,i,'free',sp.l); return; }
     openModal({type:'cast',sid:s.id,idx:i}); },
+  concEnd(el){ const s=sheetById(el.dataset.id||(S.modal&&S.modal.sid)); if(!s||!s.conc) return; const n=s.conc.name; s.conc=null; saveNow(s); if(S.modal&&S.modal.type==='conc') closeModal(); toast(`Concentração em ${n} encerrada.`); render(); },
+  concInfo(el){ if(SPELL_BY[el.dataset.v]) openModal({type:'spellInfo',name:el.dataset.v}); },
+  async concRoll(){ const m=S.modal, s=sheetById(m.sid); const r=await doRoll(withMod(d20(),concBonus(s)),`${rollName(s)} · Concentração (CD ${m.dc})`); if(!r) return;
+    m.res={total:r.total}; if(r.total<m.dc){ const n=s.conc.name; s.conc=null; saveNow(s); toast(`Concentração em ${n} perdida.`,'err'); } renderModal(); render(); },
   castSlot(el){ S.modal.mode='slot'; S.modal.slot=+el.dataset.v; renderModal(); },
   castGo(){ const m=S.modal, sh=sheetById(m.sid), sp=spellOf(sh.spells[m.idx]); const opts=castOptions(sh,sp);
     const mode=m.mode||(opts.find(o=>o.left>0)?'slot':/Ritual/.test(sp.ct)?'ritual':'free'); const slot=m.slot||(opts.find(o=>o.left>0)||{}).l||sp.l;
@@ -2708,7 +2829,9 @@ const A = {
   wEq(el){ W[el.dataset.f]=el.dataset.f==='ceq'?+el.dataset.v:el.dataset.v; renderModal(); },
   delSpell(el){ const s=sh_(el); const [x]=s.spells.splice(+el.dataset.v,1); if(x&&x.art){ Store.del(artPath(x.art)).catch(()=>{}); delete artCache[x.art]; } saveNow(s); render(); },
   hp(el){ const s=sh_(el); const inp=$('#hpAmt-'+s.id); const n=Math.max(0,Math.floor(+inp.value||0)); if(!n){ inp.focus(); return; }
-    if(el.dataset.v==='dmg'){ let d=n; if(s.hpTemp){ const t=Math.min(s.hpTemp,d); s.hpTemp-=t; d-=t; } s.hpCur=Math.max(0,(+s.hpCur||0)-d); }
+    if(el.dataset.v==='dmg'){ let d=n; if(s.hpTemp){ const t=Math.min(s.hpTemp,d); s.hpTemp-=t; d-=t; } s.hpCur=Math.max(0,(+s.hpCur||0)-d);
+      if(s.conc&&s.conc.name){ if(s.hpCur<=0){ const cn=s.conc.name; s.conc=null; setTimeout(()=>toast(`Com 0 PV, a concentração em ${cn} termina.`,'err'),0); }
+        else setTimeout(()=>openModal({type:'conc',sid:s.id,dmg:n,dc:concDC(n),name:s.conc.name}),0); } }
     else { s.hpCur=Math.min(+s.hpMax||0,(+s.hpCur||0)+n); if(s.hpCur>0&&s.ds) s.ds={s:0,f:0}; }
     saveNow(s); render(); },
   async rollHD(el){ const s=sh_(el); const lvl=shLevel(s); if((+s.hdUsed||0)>=lvl){ toast('Todos os Dados de Vida já foram gastos. Um Descanso Longo recupera todos.','err'); return; }
@@ -2721,7 +2844,7 @@ const A = {
     if(s.ds.s>=3) toast(`${rollName(s)} está estável.`); if(s.ds.f>=3) toast(`${rollName(s)} morreu.`,'err'); saveNow(s); render(); },
   insp(el){ const s=sh_(el); s.insp=!s.insp; saveNow(s); render(); },
   rest(el){ const s=sh_(el);
-    if(el.dataset.v==='long'){ s.hpCur=+s.hpMax||0; s.hpTemp=0; s.hdUsed=0; s.ds={s:0,f:0}; for(let i=1;i<=9;i++) if(s.slots[i]) s.slots[i].used=0; if(s.species==='humano') s.insp=true; toast('Descanso longo: PV, Dados de Vida e espaços de magia recuperados.'); }
+    if(el.dataset.v==='long'){ s.conc=null; s.hpCur=+s.hpMax||0; s.hpTemp=0; s.hdUsed=0; s.ds={s:0,f:0}; for(let i=1;i<=9;i++) if(s.slots[i]) s.slots[i].used=0; if(s.species==='humano') s.insp=true; toast('Descanso longo: PV, Dados de Vida e espaços de magia recuperados.'); }
     else { if(s.cls==='bruxo') for(let i=1;i<=9;i++) if(s.slots[i]) s.slots[i].used=0; toast(s.cls==='bruxo'?'Descanso curto: espaços de Magia de Pacto recuperados. Gaste Dados de Vida para curar.':'Descanso curto: gaste Dados de Vida para recuperar PV.'); }
     saveNow(s); render(); },
   // npc
@@ -2734,12 +2857,12 @@ const A = {
   bubble(){ S.bubbleOpen=!S.bubbleOpen; S.seenTs=Date.now(); renderBubble(); },
   closeTray(){ $('#tray').innerHTML=''; },
   closeModal(){ closeModal(); },
-  backdrop(el,e){ if(e.target===el && S.modal && !['wizard','levelup'].includes(S.modal.type)) closeModal(); },
+  backdrop(el,e){ if(e.target===el && S.modal && !['wizard','levelup','conc'].includes(S.modal.type)) closeModal(); },
   async confirmOk(){ const fn=S.modal.fn; closeModal(); try{ await fn(); }catch(e){ console.warn(e); toast('A ação não foi concluída. Tente de novo.','err'); } },
   // assistente
-  wPick(el){ W[el.dataset.f]=el.dataset.v; if(el.dataset.f==='cls'){ W.asg=null; W.asgR=null; W.skills=[]; W.ceq=0; } if(el.dataset.f==='bg'){ W.skills=W.skills.filter(k=>!BACKGROUNDS[W.bg].sk.includes(k)); W.spSk=W.spSk.filter(k=>!BACKGROUNDS[W.bg].sk.includes(k)); }
+  wPick(el){ W[el.dataset.f]=el.dataset.v; if(el.dataset.f==='cls'){ W.asg=null; W.asgR=null; W.skills=[]; W.ceq=0; W.cantrips=[]; W.spells1=[]; } if(el.dataset.f==='bg'){ W.skills=W.skills.filter(k=>!BACKGROUNDS[W.bg].sk.includes(k)); W.spSk=W.spSk.filter(k=>!BACKGROUNDS[W.bg].sk.includes(k)); }
     if(el.dataset.f==='sp'){ W.spSk=[]; } renderModal(); },
-  wNext(){ if(stepOK()) return; W.step++; renderModal(); const b=$('.wiz-body'); if(b) b.scrollTop=0; },
+  wNext(){ if(stepOK()) return; W.step=Math.min(W.step+1,wSteps().length-1); renderModal(); const b=$('.wiz-body'); if(b) b.scrollTop=0; },
   wPrev(){ W.step--; renderModal(); },
   wMethod(el){ W.method=el.dataset.v; renderModal(); },
   wRoll4d6(){ const vals=[]; for(let i=0;i<6;i++){ const r=[rnd(6),rnd(6),rnd(6),rnd(6)].sort((a,b)=>b-a); vals.push(r[0]+r[1]+r[2]); } W.pool=vals.sort((a,b)=>b-a); W.asgR=null; renderModal(); },
@@ -2757,6 +2880,8 @@ const CH = {
   pkPay(el){ S.pk.pay=el.checked; renderModal(); },
   wP(el){ const f=el.dataset.v; const o=f==='p2'?'p1':'p2'; if(W[o]===el.value) W[o]=W[f]; W[f]=el.value; renderModal(); },
   wSkill(el){ const k=el.value; W.skills=el.checked?[...W.skills,k]:W.skills.filter(x=>x!==k); W.spSk=W.spSk.filter(x=>x!==k); renderModal(); },
+  wSpell(el){ const f=el.dataset.f, n=el.value, q=wSpellQuota(); const max=f==='cantrips'?q.cant:q.spells; W[f]=el.checked?[...W[f],n].slice(0,max):W[f].filter(x=>x!==n); renderModal(); },
+  wSpOpen(el){ W.spOpen=W.spOpen===el.dataset.v?null:el.dataset.v; renderModal(); },
   wSpSk(el){ const k=el.value, n=((SPECIES[W.sp]||{}).skC||{}).n||0; W.spSk=el.checked?[...W.spSk,k].slice(0,n):W.spSk.filter(x=>x!==k); renderModal(); },
   wLang(el){ const l=el.value; W.langs=el.checked?[...W.langs,l].slice(0,2):W.langs.filter(x=>x!==l); renderModal(); }
 };
