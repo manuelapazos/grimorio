@@ -1080,6 +1080,137 @@ body.bm-fullscreen{overflow:hidden;}
 .mon-src{margin-top:.6rem}
 .npc-save{font-size:.82rem;white-space:nowrap}
 .action .desc textarea.ink{width:100%;min-height:2.4rem;resize:vertical}
+
+/* ===== Combate: área do mapa em grade (iniciativa | ficha de combate / mapa) ===== */
+body.map-mode{display:grid;grid-template-columns:minmax(.5rem,1fr) minmax(0,300px) minmax(0,1320px) minmax(.5rem,1fr);column-gap:1rem;align-content:start}
+body.map-mode #app,body.map-mode #app>main.wrap{display:contents}
+body.map-mode .topbar{grid-column:1/-1;grid-row:1}
+body.map-mode .map-head{grid-column:2/4;grid-row:2;padding-top:.8rem}
+body.map-mode .cbt-side{grid-column:2;grid-row:3/5;align-self:start;position:sticky;top:4.2rem;max-height:calc(100vh - 4.8rem);overflow:auto;margin-bottom:1rem}
+body.map-mode .cbt-sheet{grid-column:3;grid-row:3;min-width:0}
+body.map-mode #ttHost{grid-column:3;grid-row:4;max-width:none;margin:0;padding:0 0 6rem;min-width:0}
+@media (max-width:920px){
+  body.map-mode{grid-template-columns:.5rem minmax(0,1fr) .5rem;column-gap:0}
+  body.map-mode .map-head{grid-column:2}
+  body.map-mode .cbt-side{grid-column:2;grid-row:3;position:static;max-height:none}
+  body.map-mode .cbt-sheet{grid-column:2;grid-row:4}
+  body.map-mode #ttHost{grid-column:2;grid-row:5}
+}
+.map-head .row{align-items:center}
+.map-title{font-size:clamp(1.6rem,3vw,2.2rem);margin:0}
+.map-head .ribbons{margin:.6rem 0 .8rem}
+/* painel de iniciativa */
+.ini-panel{background:var(--stone2);border:1px solid var(--seam);border-radius:var(--r);padding:.7rem .7rem .8rem}
+.ini-head{display:flex;align-items:center;gap:.4rem}
+.ini-head h3{margin:0;font-family:var(--fd);font-size:1.25rem;display:flex;align-items:center;gap:.4rem;color:var(--gold2)}
+.ini-head h3 .i{width:1.1rem;height:1.1rem}
+.ini-panel.fold .ini-head .icon-btn svg{transform:rotate(-90deg)}
+.ini-st{display:block;font-size:.85rem;color:var(--muted);margin:.35rem 0}
+.ini-st.on{color:var(--text)} .ini-st.on b{color:var(--gold2)} .ini-st.livre{color:var(--gold2)}
+.ini-turn{display:flex;gap:.3rem;margin:.2rem 0 .5rem}
+.ini-turn .primary{flex:1}
+.ini-list{display:flex;flex-direction:column;gap:.35rem}
+.ini-row{display:grid;grid-template-columns:3.1rem minmax(0,1fr) auto auto;align-items:center;gap:.3rem;background:var(--stone3);border:1px solid var(--seam);border-left:3px solid var(--seam);border-radius:var(--r-sm);padding:.3rem .35rem}
+.ini-row.npc{border-left-color:#a33}
+.ini-row.pc{border-left-color:var(--gold)}
+.ini-row.turn{box-shadow:0 0 0 2px var(--gold2) inset;background:color-mix(in srgb,var(--gold) 16%,var(--stone3))}
+.ini-row.sel{outline:2px solid var(--gold);outline-offset:1px}
+.ini-row.down{opacity:.6}
+.ini-val{display:flex;flex-direction:column;align-items:center;gap:.15rem}
+.ini-val b{font-family:var(--fd);font-size:1.35rem;line-height:1;color:var(--gold2)}
+.ini-in{width:2.8rem;text-align:center;font-family:var(--fd);font-size:1.15rem;background:var(--stone);border:1px solid var(--seam);border-radius:4px;color:var(--gold2);padding:.1rem 0}
+.ini-roll{border:1px solid var(--seam);background:var(--stone2);color:var(--muted);border-radius:4px;padding:.05rem .3rem;cursor:pointer;line-height:1}
+.ini-roll .i{width:1rem;height:1rem}
+.ini-roll:hover{color:var(--gold2);border-color:var(--gold)}
+.ini-open{display:flex;align-items:center;gap:.45rem;min-width:0;border:none;background:none;color:inherit;text-align:left;padding:0;cursor:pointer;font:inherit}
+.ini-open.off{cursor:default}
+.ini-open:not(.off):hover b{color:var(--gold2)}
+.ini-av{width:38px;height:38px;flex:none;border-radius:50%;overflow:hidden;border:2px solid var(--gold);display:grid;place-items:center;background:var(--stone);font-family:var(--fd);color:var(--gold2)}
+.ini-av.npc{border-color:#b33}
+.ini-av img{width:100%;height:100%;object-fit:cover}
+.ini-txt{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.ini-txt b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.95rem}
+.ini-txt small{color:var(--muted);font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ini-hp{display:block;height:4px;border-radius:3px;background:rgba(0,0,0,.35);margin:.2rem 0 .05rem;overflow:hidden}
+.ini-hp i{display:block;height:100%;background:#4f9a46}
+.ini-hp.mid i{background:#c9a24e} .ini-hp.low i{background:#c0392b}
+.ini-conds{display:flex;flex-wrap:wrap;gap:1px;max-width:3.6rem;justify-content:flex-end}
+.cond-ic{cursor:help;font-size:.95rem;line-height:1}
+.ini-x{padding:.15rem;color:var(--muted)}
+.ini-gm{display:flex;flex-direction:column;gap:.4rem;margin-top:.7rem;border-top:1px solid var(--seam);padding-top:.6rem}
+.ini-gm .ini-add{flex:1;min-width:0;width:auto;padding:.3rem .4rem;font-size:.9rem}
+.ini-hint{margin:.5rem 0 0}
+/* ficha normal com iniciativa ao lado */
+.sheet-layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:0 1rem;max-width:1480px;margin:0 auto;padding:0 clamp(.5rem,2vw,1.2rem)}
+.sheet-layout.folded{grid-template-columns:190px minmax(0,1fr)}
+.sheet-layout>.sheet-wrap{max-width:none;margin:0;padding-left:0;padding-right:0;min-width:0}
+.sheet-layout .ini-side{position:sticky;top:4.4rem;align-self:start;margin-top:1rem;max-height:calc(100vh - 5.4rem);overflow:auto}
+@media (max-width:1080px){.sheet-layout,.sheet-layout.folded{grid-template-columns:minmax(0,1fr)}.sheet-layout .ini-side{position:static;max-height:none}}
+.map-btn .i{width:1.05rem;height:1.05rem}
+/* ficha de combate */
+.cbt-empty{background:var(--stone2);border:1px dashed var(--seam);border-radius:var(--r);padding:1.4rem;text-align:center;margin-bottom:1rem}
+.sheet.cbt{padding:1rem 1.2rem;margin-bottom:1rem}
+.sheet.cbt.min{padding-bottom:.6rem}
+.cb-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.9rem;align-items:start;border-bottom:2px solid var(--ink);padding-bottom:.7rem;margin-bottom:.8rem}
+.sheet.cbt.min .cb-head{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.cb-por{width:72px;aspect-ratio:3/4;border:2px solid var(--ink);border-radius:6px;overflow:hidden;position:relative;background:rgba(0,0,0,.06)}
+.cb-por img{width:100%;height:100%;object-fit:cover;display:block}
+.cb-por .portrait-empty svg{width:55%}
+.cb-name{margin:0;font-size:1.7rem;color:var(--crimInk);line-height:1.1}
+.cb-tools{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;justify-content:flex-end;max-width:360px}
+.cb-tools .advbar button{padding:.2rem .5rem;font-size:.85rem}
+.cb-insp{display:flex;align-items:center;gap:.3rem}
+.cb-insp .pip{width:24px;height:24px}
+.sheet.cbt.min .cb-tools .icon-btn[data-act=cbMin] svg{transform:rotate(-90deg)}
+@media (max-width:720px){.cb-head{grid-template-columns:auto minmax(0,1fr)}.cb-tools{grid-column:1/-1;justify-content:flex-start;max-width:none}}
+.cb-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:.5rem;margin-bottom:.8rem}
+.cb-stat{border:1px solid var(--vel3);border-radius:var(--r);padding:.35rem .5rem;text-align:center;background:rgba(255,255,255,.22)}
+.cb-stat .lab{display:block}
+.cb-stat .v{font-family:var(--fd);font-size:1.5rem}
+.cb-stat .cb-big{font-family:var(--fd);font-size:1.6rem;text-align:center;width:100%}
+.cb-stat .cb-mid{text-align:center;width:100%}
+.cb-hp{grid-column:span 2;min-width:220px}
+.cb-hp .hp-row{display:flex;align-items:center;justify-content:center;gap:.3rem}
+.cb-hp .hp-row .cur{width:3.6rem;font-family:var(--fd);font-size:1.5rem;text-align:center}
+.cb-hp .hp-ctl{display:flex;gap:.3rem;justify-content:center;margin-top:.3rem}
+.cb-hp .hp-ctl input{width:3.4rem}
+.cb-death .pips{justify-content:center}
+.cb-cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1rem 1.4rem}
+@media (max-width:820px){.cb-cols{grid-template-columns:minmax(0,1fr)}}
+.cb-atk{display:flex;align-items:center;gap:.4rem;padding:.35rem 0;border-bottom:1px dotted rgba(138,112,83,.4)}
+.cb-atk .grow{min-width:0}
+.cb-desc{color:var(--ink2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cb-atk:hover .cb-desc{-webkit-line-clamp:unset}
+.cb-slots{display:flex;flex-wrap:wrap;gap:.4rem .9rem;margin:.2rem 0 .5rem}
+.cb-slot{display:flex;align-items:center;gap:.3rem}
+.cb-spells{display:flex;flex-direction:column}
+.cb-sp{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;padding:.3rem 0;border-bottom:1px dotted rgba(138,112,83,.4)}
+.cb-dc{font-family:var(--fb);margin-left:.5rem}
+.cb-row2{display:grid;grid-template-columns:minmax(0,1fr);gap:.5rem;margin-bottom:.6rem}
+.cb-row2>.stat{margin:0}
+.cb-row2>.stat.conc{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;text-align:left;padding:.4rem .7rem}
+.cb-row2>.stat.conc .lab{margin:0}
+.cb-row2>.stat.conc>*{margin:0!important}
+.cb-feats{border:1px solid var(--vel3);border-radius:var(--r);padding:.3rem .7rem;margin-bottom:.6rem;background:rgba(255,255,255,.15)}
+.cb-feats>summary{cursor:pointer;font-family:var(--fd);font-size:1.2rem;color:var(--crimInk);padding:.2rem 0}
+.cb-feats .sec-t{font-size:1.05rem}
+.cb-text{margin:.3rem 0}
+/* condições */
+.cond-bar{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;margin:.35rem 0 .1rem}
+.cond-chip{display:inline-flex;align-items:center;gap:.25rem;font-size:.85rem;padding:.08rem .5rem;border-radius:99px;background:rgba(155,35,35,.12);border:1px solid rgba(155,35,35,.35);color:var(--crimInk);cursor:help;font-family:var(--fb)}
+.cond-x{border:none;background:none;color:inherit;cursor:pointer;font-size:1rem;line-height:1;padding:0 0 0 .1rem}
+.cond-add{width:auto;font-size:.82rem;padding:.1rem .3rem;border:1px dashed var(--ink3);border-radius:99px;background:transparent;color:var(--ink2);cursor:pointer}
+.cond-tip{position:fixed;z-index:120;max-width:320px;background:#1d1922;color:#ece2cc;border:1px solid #6b5a3e;border-radius:8px;padding:.55rem .7rem;font-size:.85rem;line-height:1.35;box-shadow:0 10px 30px rgba(0,0,0,.45);pointer-events:none}
+.cond-tip[hidden]{display:none}
+.cond-tip .ct-h{font-family:var(--fd);font-size:1.05rem;color:#e2c277}
+.cond-tip .ct-sub{color:#b8aa91;margin:.1rem 0 .2rem}
+.cond-tip .ct-i{margin-top:.35rem}
+.cond-tip .ct-i b{display:block;color:#e2c277;font-weight:600}
+/* NPC: imagem no bloco */
+.npc-head{display:flex;gap:1rem;align-items:flex-start}
+.npc-head .portrait-box{width:96px;flex:none}
+.npc-head .grow{min-width:0}
+.npc-thumb{width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid var(--seam);flex:none}
 </style></head><body><div id="app"></div><div id="ttHost" class="tt-host" hidden></div><div id="bubble" class="bubble"></div><div id="modal"></div><div id="tray" class="tray"></div><div id="spot"></div><div class="toasts" id="toasts" aria-live="polite"></div><script>
 /*!
  * Tabletop 1.0 — mapa de batalha reutilizável (cenas, mapas, grade, tokens, régua, desenho,
@@ -2965,6 +3096,7 @@ function cleanRoll(r){
 const SHEET_NUM=['initRoll','xp','level','pendingLv','hpMax','hpCur','hpTemp','ac','initMisc','hdUsed','pb','atk'];
 function cleanSheet(s){
   SHEET_NUM.forEach(k=>{ if(s[k]!==undefined&&s[k]!==null&&k!=='atk') s[k]=num(s[k]); }); s.onMap=!!s.onMap;
+  if(s.conds!==undefined) s.conds=Array.isArray(s.conds)?[...new Set(s.conds.filter(k=>typeof k==='string'&&TT_CONDS_OK.has(k)))].slice(0,20):[];
   if(s.ab) Object.keys(s.ab).forEach(k=>s.ab[k]=num(s.ab[k]));
   if(s.coins) Object.keys(s.coins).forEach(k=>s.coins[k]=num(s.coins[k]));
   if(s.slots) Object.keys(s.slots).forEach(k=>{ const v=s.slots[k]||{}; s.slots[k]={max:num(v.max),used:num(v.used)}; });
@@ -3714,6 +3846,8 @@ function preserve(fn){
   if(key){ const el=document.querySelector(`[data-k="${CSS.escape(key)}"]`); if(el){ if(el!==ae&&ae&&!ae.isConnected&&el.tagName===ae.tagName&&el.type===ae.type&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)){ ae.disabled=el.disabled; el.replaceWith(ae); ae.focus({preventScroll:true}); } else { el.focus({preventScroll:true}); try{ if(ss!=null) el.setSelectionRange(ss,se); }catch(e){} } } }
 }
 function render(){
+  if(typeof ptrDown!=='undefined'&&ptrDown){ pendingRender=true; return; }  // espera soltar o ponteiro: o clique não perde o botão nem o que foi digitado
+  document.body.classList.toggle('map-mode',!!(S.screen==='camp'&&S.camp&&S.campTab==='map'&&!S.openSheet));
   preserve(()=>{ $('#app').innerHTML=view(); });
   renderBubble(); renderSpot(); ttRefresh();
 }
@@ -3786,6 +3920,7 @@ function viewCamp(){
   const c=S.camp; if(!c) return `<main class="wrap"><p class="muted">Abrindo a mesa…</p></main>`;
   if(S.openSheet){ const sh=sheetById(S.openSheet); if(sh) return viewSheet(sh); S.openSheet=null; }
   const gm=isGM(); if(!gm&&S.campTab==='gm') S.campTab='players';
+  if(S.campTab==='map') return `<main class="wrap wrap-map">${mapHead()}${viewCombat()}</main>`;
   return `<main class="wrap ${S.campTab==='map'?'wrap-map':''}">
     <section class="camp-head"><div class="cover">${coverHTML(c)}</div>
       <div><h1>${h(c.name)}</h1><p class="muted" style="margin:.3rem 0 0">${c.desc?h(c.desc)+' · ':''}Mestre: ${h(c.gmName)}</p>
@@ -3857,7 +3992,7 @@ function gmPlayers(){
 function gmNPCs(){
   const n=S.sheets.filter(s=>s.kind==='npc');
   return `<section class="panel"><div class="row" style="margin-bottom:.8rem"><h2 class="grow" style="margin:0">Fichas dos NPCs</h2><button class="btn" data-act="monPicker">${IC.book} Adicionar do livro</button><button class="btn primary" data-act="newNPC">${IC.plus} Criar NPC</button></div>
-    ${n.length?`<div class="list">${n.map(sh=>`<div class="li"><div class="grow"><button class="nm" data-act="openSheet" data-id="${sh.id}">${h(sh.name||'NPC sem nome')}</button><div class="sub">${sh.onMap?'<span class="pill gold">no mapa</span> ':''}${h(sh.meta||'')}${sh.cr?' · ND '+h(sh.cr):''} · CA ${sh.ac} · PV ${sh.hpCur}/${sh.hpMax}</div></div>
+    ${n.length?`<div class="list">${n.map(sh=>`<div class="li">${sh.portrait?`<img class="npc-thumb" src="${sh.portrait}" alt="">`:''}<div class="grow"><button class="nm" data-act="openSheet" data-id="${sh.id}">${h(sh.name||'NPC sem nome')}</button><div class="sub">${sh.onMap?'<span class="pill gold">no combate</span> ':''}${h(sh.meta||'')}${sh.cr?' · ND '+h(sh.cr):''} · CA ${sh.ac} · PV ${sh.hpCur}/${sh.hpMax}</div></div>
       <button class="btn sm" data-act="openSheet" data-id="${sh.id}">Abrir</button><button class="btn sm ghost" data-act="dupNPC" data-id="${sh.id}">Duplicar</button><button class="icon-btn" data-act="delSheet" data-id="${sh.id}" aria-label="Excluir NPC">${IC.trash}</button></div>`).join('')}</div>`
       :`<div class="empty"><h3>Nenhum NPC ainda</h3><p>Crie aliados, vilões e monstros com um bloco de estatísticas enxuto, ou traga goblins, orcs, dragões e companhia direto do livro.</p><button class="btn" data-act="monPicker">${IC.book} Adicionar do livro</button></div>`}</section>`;
 }
@@ -3935,13 +4070,13 @@ const withMod = (base,m)=> base+(m?(m>0?'+':'')+m:'');
 function viewSheet(sh){
   ED=canEdit(sh);
   if(ED&&normSheet(sh)) touch(sh);
-  const top=`<div class="sheet-bar"><button class="btn ghost sm" data-act="closeSheet">${IC.back} Voltar</button><span class="grow"></span>
+  const top=`<div class="sheet-bar">${S.campId?`<button class="btn sm map-btn" data-act="goMap" data-id="${sh.id}" title="Ir para o mapa de batalha com a ficha de combate">${IC.map} Mapa</button>`:''}<button class="btn ghost sm" data-act="closeSheet">${IC.back} Voltar</button><span class="grow"></span>
     ${sh.kind==='pc'?`<div class="advbar" role="group" aria-label="Rolagens de d20">${[['normal','Normal'],['adv','Vantagem'],['dis','Desvantagem']].map(([k,l])=>`<button data-act="adv" data-v="${k}" aria-pressed="${S.adv===k}">${l}</button>`).join('')}</div>`:''}
     ${isGM()&&sh.kind==='pc'?`<label class="small muted" for="shown">Jogador</label><select class="inp" style="width:auto" id="shown" data-act-change="assign" data-id="${sh.id}"><option value="">Sem jogador</option>${memberOptions().map(([id,n])=>`<option value="${id}" ${sh.ownerId===id?'selected':''}>${h(n)}</option>`).join('')}</select>`:''}
     ${canEdit(sh)?`<button class="btn danger sm" data-act="delSheet" data-id="${sh.id}">${IC.trash} Excluir ficha</button>`:''}
-    ${isGM()&&sh.kind==='npc'?`<label class="check"><input type="checkbox" data-act-change="ttNpcToggle" data-id="${sh.id}" ${sh.onMap?'checked':''}> No mapa de batalha</label>`:''}
+    ${isGM()&&sh.kind==='npc'?`<label class="check"><input type="checkbox" data-act-change="ttNpcToggle" data-id="${sh.id}" ${sh.onMap?'checked':''}> No combate (iniciativa e mapa)</label>`:''}
     ${isGM()&&sh.kind==='npc'?`<label class="check"><input type="checkbox" data-s="rq.secret" data-k="npcsecret" ${S.rq.secret?'checked':''}> Rolagens secretas</label>`:''}</div>`;
-  return `<main class="sheet-wrap">${top}<article class="sheet">${sh.kind==='npc'?npcBody(sh):pcBody(sh)}</article></main>`;
+  return sheetLayout(sh,`<main class="sheet-wrap">${top}<article class="sheet">${sh.kind==='npc'?npcBody(sh):pcBody(sh)}</article></main>`);
 }
 
 function pcBody(sh){
@@ -3957,6 +4092,7 @@ function pcBody(sh){
       ${ED?`<button class="portrait-btn" data-act="portraitModal" data-id="${sh.id}" aria-label="${sh.portrait?'Trocar retrato':'Adicionar retrato'}"></button>`:''}</div>
     <div>
       ${bi(sh,'name',{cls:'sh-name',ph:'Nome do personagem',label:'Nome do personagem'})}
+      ${condChips(sh,{edit:ED})}
       <div class="sh-ids">
         <div><span class="lab">Classe</span>${bs(sh,'cls',Object.entries(CLASSES).map(([k,c])=>[k,c.n]),{label:'Classe'})}</div>
         <div><span class="lab">Subclasse</span>${bi(sh,'subclass',{label:'Subclasse'})}</div>
@@ -3979,7 +4115,7 @@ function pcBody(sh){
       <div class="hp-row">${bi(sh,'hpCur',{num:true,cls:'cur',label:'PV atuais'})}<span class="muted" style="font-size:1.4rem">/</span>${bi(sh,'hpMax',{num:true,label:'PV máximos',style:'width:3.5rem;font-size:1.4rem'})}
         <span class="small muted" style="margin-left:.5rem">temp.</span>${bi(sh,'hpTemp',{num:true,label:'PV temporários',style:'width:3rem'})}</div>
       <div class="hpbar"><i style="width:${hpPct}%"></i></div>
-      ${ED?`<div class="hp-ctl"><input class="ink num" type="number" min="0" id="hpAmt-${sh.id}" aria-label="Quantidade" placeholder="0"><button class="btn sm" data-act="hp" data-v="dmg" data-id="${sh.id}">Dano</button><button class="btn sm" data-act="hp" data-v="heal" data-id="${sh.id}">Cura</button></div>`:''}</div>
+      ${ED?`<div class="hp-ctl"><input class="ink num" type="number" min="0" id="hpAmt-${sh.id}" data-k="hpAmt-${sh.id}" aria-label="Quantidade" placeholder="0"><button class="btn sm" data-act="hp" data-v="dmg" data-id="${sh.id}">Dano</button><button class="btn sm" data-act="hp" data-v="heal" data-id="${sh.id}">Cura</button></div>`:''}</div>
     <div class="stat"><span class="lab">Dados de Vida</span><div class="row" style="justify-content:center;gap:.2rem">${bi(sh,'hd',{cls:'num',ph:'d8',label:'Dado de vida',style:'width:4rem;font-family:var(--fd);font-size:1.6rem'})}</div>
       <div class="small muted">usados ${bi(sh,'hdUsed',{num:true,label:'Dados de vida usados',style:'width:2.5rem;display:inline-block'})} de ${lvl}</div>
       <button class="btn sm" data-act="rollHD" data-id="${sh.id}" ${sh.hd?'':'disabled'}>Gastar e rolar</button></div>
@@ -4069,14 +4205,17 @@ function pcStory(sh){
 function npcBody(sh){
   const m=k=>mod(sh.ab[k]);
   return `<div class="stat-block">
-    ${bi(sh,'name',{cls:'sh-name',ph:'Nome do NPC',label:'Nome do NPC',style:'color:var(--crimInk)'})}
+    <div class="npc-head"><div class="portrait-box">${sh.portrait?`<img src="${sh.portrait}" alt="Imagem de ${h(sh.name||'NPC')}">`:`<div class="portrait-empty">${IC.user}<span>${ED?'Adicionar imagem':'Sem imagem'}</span></div>`}
+      ${ED?`<button class="portrait-btn" data-act="portraitModal" data-id="${sh.id}" aria-label="${sh.portrait?'Trocar imagem':'Adicionar imagem'}"></button>`:''}</div>
+    <div class="grow">${bi(sh,'name',{cls:'sh-name',ph:'Nome do NPC',label:'Nome do NPC',style:'color:var(--crimInk)'})}
     ${bi(sh,'meta',{ph:'Humanoide Médio, Neutro e Mau',label:'Tipo, tamanho e alinhamento',style:'font-style:italic'})}
+    ${condChips(sh,{edit:ED})}</div></div>
     <hr class="rule">
     <div class="kv">
       <b>Classe de Armadura</b><div class="row" style="gap:.4rem">${bi(sh,'ac',{num:true,label:'CA',style:'width:3.5rem'})}${bi(sh,'acNote',{ph:'armadura de couro',label:'Origem da CA',style:'flex:1'})}</div>
       <b>Pontos de Vida</b><div class="row" style="gap:.4rem">${bi(sh,'hpCur',{num:true,label:'PV atuais',style:'width:3.5rem'})}/ ${bi(sh,'hpMax',{num:true,label:'PV máximos',style:'width:3.5rem'})}${bi(sh,'hpFormula',{ph:'4d8+4',label:'Fórmula de PV',style:'width:6rem'})}
         ${sh.hpFormula&&ED?`<button class="btn sm" data-act="npcHpRoll" data-id="${sh.id}">Rolar PV</button>`:''}
-        ${ED?`<input class="ink num" type="number" min="0" id="hpAmt-${sh.id}" aria-label="Quantidade" placeholder="0" style="width:3.5rem"><button class="btn sm" data-act="hp" data-v="dmg" data-id="${sh.id}">Dano</button><button class="btn sm" data-act="hp" data-v="heal" data-id="${sh.id}">Cura</button>`:''}</div>
+        ${ED?`<input class="ink num" type="number" min="0" id="hpAmt-${sh.id}" data-k="hpAmt-${sh.id}" aria-label="Quantidade" placeholder="0" style="width:3.5rem"><button class="btn sm" data-act="hp" data-v="dmg" data-id="${sh.id}">Dano</button><button class="btn sm" data-act="hp" data-v="heal" data-id="${sh.id}">Cura</button>`:''}</div>
       <b>Deslocamento</b>${bi(sh,'speed',{label:'Deslocamento'})}
       <b>Iniciativa</b><div><button class="roll-chip" data-act="rollInit" data-id="${sh.id}">${sgn(m('des'))}</button></div>
     </div><hr class="rule">
@@ -4512,7 +4651,7 @@ const A = {
   linApply(){ const m=S.modal, s=sheetById(m.sid); const p=lineagePlan(s,m.lk); if(!p) return; if(p.needsSkills&&m.picks.length<2) return;
     applyLineage(s,m.lk,p.needsSkills?m.picks:[]); saveNow(s); closeModal(); render();
     toast(`${p.L.n} aplicada.${p.sp.ac?' Revise a CA: a armadura natural de '+p.sp.n+' não vale mais.':''}`); },
-  ttNpcOff(el){ const s=sh_(el); if(!s||!isGM()) return; s.onMap=false; saveNow(s); render(); },
+  ttNpcOff(el){ const s=sh_(el); if(!s||!isGM()) return; s.onMap=false; s.initRoll=null; if(S.cbSel===s.id) S.cbSel=null; saveNow(s); render(); },
   async ttNpcInit(){ if(!isGM()) return; const list=S.sheets.filter(s=>s.kind==='npc'&&s.onMap); const res=[];
     list.forEach(s=>{ const r=rollExpr(withMod('1d20',mod(num(s.ab.des)||10)+num(s.initMisc))); s.initRoll=r.total; saveNow(s); res.push(`${s.name||'NPC'} ${r.total}`); });
     toast('Iniciativa dos NPCs: '+res.join(', ')+'.'); render(); },
@@ -4637,8 +4776,8 @@ const A = {
   async wCreate(){ const pc=buildPC(); const btn=$('[data-act="wCreate"]'); if(btn) btn.disabled=true; try{ const sid=await saveNewSheet(pc); closeModal(); S.openSheet=sid; S.sheetTab='principal'; toast(`${pc.name} entrou na campanha.`); render(); window.scrollTo(0,0); }catch(e){ toast('Não foi possível criar a ficha. Tente de novo.','err'); if(btn) btn.disabled=false; } }
 };
 const CH = {
-  ttNpcOn(el){ const s=sheetById(el.value); if(!s||!isGM()) return; s.onMap=true; saveNow(s); toast(`${s.name||'NPC'} entrou no mapa.`); render(); },
-  ttNpcToggle(el){ const s=sheetById(el.dataset.id); if(!s||!isGM()) return; s.onMap=el.checked; saveNow(s); render(); },
+  ttNpcOn(el){ const s=sheetById(el.value); if(!s||!isGM()) return; s.onMap=true; saveNow(s); toast(`${s.name||'NPC'} entrou no combate e no mapa.`); render(); },
+  ttNpcToggle(el){ const s=sheetById(el.dataset.id); if(!s||!isGM()) return; s.onMap=el.checked; if(!s.onMap) s.initRoll=null; saveNow(s); render(); },
   lineage(el){ const s=sheetById(el.dataset.id); const v=el.value; if(!s) return;
     if(!v){ if(!s.lineage) return; const n=LINEAGES[s.lineage].n; confirmBox('Remover linhagem?',`Os traços de ${n} saem da ficha, e os de ${SPECIES[s.species].n} voltam, com o deslocamento e as perícias de antes.`,'Remover linhagem',()=>{ revertLineage(s); saveNow(s); toast(`Linhagem ${n} removida.`); render(); },false); render(); return; }
     openModal({type:'lineage',sid:s.id,lk:v,picks:[]}); render(); },
@@ -4802,8 +4941,12 @@ function ttWrapArm(arm){
   return { colecao(n){ const c=arm.colecao(n);
     return {
       doc(id){ const r=id?c.doc(id):c.doc(); return {id:r.id, set:(a,b)=>r.set(a,b), delete:()=>r.delete(), get:()=>r.get().then(s=>wrapDoc(n,s)),
-        onSnapshot:cb=>r.onSnapshot(s=>cb(wrapDoc(n,s)),e=>dbError('mapa '+n,e))}; },
-      onSnapshot:cb=>c.onSnapshot(s=>cb({size:s.size,forEach(fn){ s.forEach(d=>{ const v=ttClean(n,d.data()); fn({id:d.id,data:()=>v}); }); }}),e=>dbError('mapa '+n,e))
+        onSnapshot:cb=>r.onSnapshot(s=>{ const w=wrapDoc(n,s);
+          if(n==='battlemap'&&r.id==='config'){ try{ const d=w&&w.data&&w.data(); TT_ST.cena=(d&&d.cenaAtiva)||null; ttMapChanged(); }catch(e){} }
+          cb(w); },e=>dbError('mapa '+n,e))}; },
+      onSnapshot:cb=>c.onSnapshot(s=>{ const rows=[]; s.forEach(d=>{ rows.push([d.id,ttClean(n,d.data())]); });
+          if(n==='battlemapTokens'){ const o={}; rows.forEach(([id,v])=>o[id]=v); TT_ST.toks=o; TT_ST.ready=true; ttMapChanged(); }
+          cb({size:s.size,forEach(fn){ rows.forEach(([id,v])=>fn({id,data:()=>v})); }}); },e=>dbError('mapa '+n,e))
     }; } };
 }
 
@@ -4831,9 +4974,10 @@ function ttTokens(){
 /* ---- ciclo de vida ---- */
 let ttMesa=null, ttCid=null, ttUserSig='', ttRaf=0;
 function ttEnsure(){
-  const host=$('#ttHost'); const show=S.screen==='camp'&&S.camp&&S.campTab==='map'&&!S.openSheet;
+  const host=$('#ttHost'); const inCamp=!!(S.screen==='camp'&&S.camp&&S.campId); const show=inCamp&&S.campTab==='map'&&!S.openSheet;
   host.hidden=!show;
-  if(!show||!window.Tabletop) return;
+  if(!inCamp){ if(ttMesa) ttDestroy(); return; }
+  if(!window.Tabletop) return;
   if(ttMesa&&ttCid!==S.campId){ ttDestroy(); }
   if(!ttMesa){
     host.innerHTML='<div id="ttMapa"></div>'; ttCid=S.campId;
@@ -4841,25 +4985,26 @@ function ttEnsure(){
     ttMesa=Tabletop.criar({elemento:'#ttMapa', id:'grimorio_'+S.campId, usuario:ttUsuario(), tokens:ttTokens, armazenamento:ttWrapArm(arm),
       condicoes:TT_CONDICOES, luzes:TT_LUZES, textos:TT_TEXTOS, tema:TT_TEMA, metrosPorQuadrado:1.5,
       aviso:m=>toast(String(m).replace(/^[^\wÀ-ú]+\s*/,'')),
-      aoAbrirFicha:id=>{ if(!sheetById(id)) return; S.openSheet=id; S.sheetTab='principal'; render(); window.scrollTo(0,0); },
+      aoAbrirFicha:id=>{ const s=sheetById(id); if(!canOpenCbt(s)) return; S.cbSel=id; S.cbMin=false; S.openSheet=null; S.campTab='map'; render(); const p=$('.cbt-sheet'); if(p) p.scrollIntoView({block:'start',behavior:'smooth'}); },
       aoMudarTurno:ttTurnChanged});
     ttUserSig=JSON.stringify(ttUsuario());
     setTimeout(()=>{ try{ ttMesa&&ttMesa.enquadrar(); }catch(e){} },60);
   }
 }
 function ttUsuario(){ return {nome:ttUserName(S.me&&S.me.id), mestre:isGM()}; }
-function ttDestroy(){ if(ttMesa){ try{ ttMesa.destruir(); }catch(e){} } ttMesa=null; ttCid=null; ttLastTurn=null; const host=$('#ttHost'); if(host){ host.innerHTML=''; host.hidden=true; } }
+function ttDestroy(){ if(ttMesa){ try{ ttMesa.destruir(); }catch(e){} } ttMesa=null; ttCid=null; ttLastTurn=null; ttStReset(); const host=$('#ttHost'); if(host){ host.innerHTML=''; host.hidden=true; } }
 function ttRefresh(){
+  try{ ttSyncConds(); }catch(e){ console.warn(e); }
   const wasHidden=$('#ttHost').hidden;
   ttEnsure(); if(!ttMesa) return;
   if(wasHidden&&!$('#ttHost').hidden) setTimeout(()=>{ try{ window.dispatchEvent(new Event('resize')); ttMesa&&ttMesa.atualizar(); }catch(e){} },30);
   cancelAnimationFrame(ttRaf); ttRaf=requestAnimationFrame(()=>{ if(!ttMesa) return;
     const u=ttUsuario(), sig=JSON.stringify(u); if(sig!==ttUserSig){ ttUserSig=sig; ttMesa.definirUsuario(u); }
-    try{ ttMesa.atualizar(); ttSyncConds(); }catch(e){ console.warn(e); } });
+    try{ ttMesa.atualizar(); ttCondToMap(); }catch(e){ console.warn(e); } });
 }
 let ttLastTurn=null;
 function ttTurnChanged({turno,rodada,livre}){
-  const key=[turno,rodada,livre].join('|'); const first=ttLastTurn===null; ttLastTurn=key;
+  const key=[turno,rodada,livre].join('|'); const first=ttLastTurn===null; ttLastTurn=key; setTimeout(safeRender,0);
   if(first||!turno||livre) return;
   const sh=sheetById(turno); if(!sh) return;
   const mine=sh.ownerId===S.me.id||(!sh.ownerId&&isGM());
@@ -4893,18 +5038,17 @@ function ttBar(){
    Só age quando o estado muda, e só no aparelho de quem controla a ficha, para não brigar com marcações manuais. */
 const ttPrev={};
 function ttSyncConds(){
-  if(!ttMesa) return;
   S.sheets.forEach(s=>{
-    if(!(s.kind==='pc'||s.onMap)) return;
-    const ctrl=s.ownerId?s.ownerId===S.me.id:isGM(); if(!ctrl) return;
-    const now={down:num(s.hpCur)<=0&&num(s.hpMax)>0, conc:!!(s.conc&&s.conc.name)};
+    if(!canEdit(s)) return;
+    const now={cur:num(s.hpCur),down:num(s.hpCur)<=0&&num(s.hpMax)>0, conc:!!(s.conc&&s.conc.name)};
     const was=ttPrev[s.id]; ttPrev[s.id]=now; if(!was) return;
     if(was.down===now.down&&was.conc===now.conc) return;
-    let c; try{ c=(ttMesa.condicoes(s.id)||[]).slice(); }catch(e){ return; }
+    const c=condsOf(s).slice();
     const tog=(k,on)=>{ const i=c.indexOf(k); if(on&&i<0) c.push(k); if(!on&&i>=0) c.splice(i,1); };
-    if(was.down!==now.down){ tog(s.kind==='pc'?'inconsciente':'derrotado',now.down); if(now.down&&s.kind==='pc') tog('derrubado',true); }
+    // só marca quando a vida cai de verdade (de mais de 0 para 0), não enquanto a ficha está sendo preenchida
+    if(was.down!==now.down&&(!now.down||was.cur>0)){ tog(s.kind==='pc'?'inconsciente':'derrotado',now.down); if(now.down&&s.kind==='pc') tog('derrubado',true); }
     if(was.conc!==now.conc) tog('concentrando',now.conc);
-    try{ ttMesa.definirCondicoes(s.id,c); }catch(e){}
+    if(!sameSet(c,condsOf(s))){ s.conds=c; saveNow(s); }
   });
 }
 
@@ -5065,6 +5209,7 @@ function viewMonPicker(){
       <select class="inp" data-mk="cr" data-k="mk.cr" aria-label="Nível de desafio">${MON_CR.map(([k,l])=>`<option value="${k}" ${(f.cr||'')===k?'selected':''}>${l}</option>`).join('')}</select></div>
     <div class="row mon-opts"><label class="small">Quantidade <input class="inp num" type="number" min="1" max="20" data-mk="qty" data-k="mk.qty" value="${f.qty||1}" aria-label="Quantidade" style="width:4.2rem;display:inline-block;padding:.25rem .4rem"></label>
       <label class="check small"><input type="checkbox" data-act-change="mkRoll" ${f.rollHp?'checked':''}> Rolar os PV de cada um</label>
+      <label class="check small"><input type="checkbox" data-act-change="mkJoin" ${f.join?'checked':''}> Entrar no combate</label>
       <span class="grow"></span><label class="small">Ordem <select class="inp" data-mk="sort" data-k="mk.sort" aria-label="Ordenar" style="width:auto;display:inline-block;padding:.25rem .4rem"><option value="">Nome</option><option value="cr" ${f.sort==='cr'?'selected':''}>Nível de desafio</option></select></label></div>
     <p class="small muted" style="margin:.4rem 0">${all.length} monstro${all.length===1?'':'s'}${all.length>list.length?` · mostrando ${list.length}`:''}</p>
     <div class="sp-list" data-scroll="mklist">${list.map(m=>{ const open=f.open===m.id, n=inCamp(m.n);
@@ -5075,21 +5220,292 @@ function viewMonPicker(){
       ${all.length>list.length?`<div style="text-align:center;padding:.8rem"><button class="btn sm" data-act="mkMore">Mostrar mais</button></div>`:''}</div></div>`;
 }
 Object.assign(A,{
-  async monPicker(){ if(!isGM()) return; S.mk=S.mk||{q:'',src:'',ty:'',cr:'',qty:1,rollHp:false,sort:'',open:null,limit:80}; S.mk.err=null; openModal({type:'monPick'});
+  async monPicker(el){ if(!isGM()) return; S.mk=S.mk||{q:'',src:'',ty:'',cr:'',qty:1,rollHp:false,sort:'',open:null,limit:80}; S.mk.err=null; S.mk.join=!!(el&&el.dataset&&el.dataset.join==='1'); openModal({type:'monPick'});
     try{ await loadMonsters(); }catch(e){ S.mk.err=e.message||'Não foi possível abrir o bestiário.'; } if(S.modal&&S.modal.type==='monPick') preserve(renderModal); },
   mkSrc(el){ S.mk.src=el.dataset.v; S.mk.ty=''; S.mk.limit=80; renderModal(); },
   mkOpen(el){ const v=+el.dataset.v; S.mk.open=S.mk.open===v?null:v; preserve(renderModal); },
   mkMore(){ S.mk.limit=(S.mk.limit||80)+120; preserve(renderModal); },
   async mkAdd(el){ if(!isGM()||!MONSTERS) return; const m=MONSTERS.find(x=>x.id===+el.dataset.v); if(!m) return;
     const qty=Math.max(1,Math.min(20,Math.floor(+S.mk.qty||1))); const names=monNames(m.n,qty); el.disabled=true;
-    try{ let t=Date.now(); for(const nm of names){ const d=monToNPC(m,nm,S.mk.rollHp); d.createdAt=t++; await saveNewSheet(d); } }
+    try{ let t=Date.now(); for(const nm of names){ const d=monToNPC(m,nm,S.mk.rollHp); d.createdAt=t++; if(S.mk.join) d.onMap=true; await saveNewSheet(d); } }
     catch(e){ toast('Não foi possível criar o NPC.','err'); el.disabled=false; return; }
-    toast(qty>1?`${qty} × ${m.n} adicionados aos NPCs.`:`${m.n} adicionado aos NPCs.`); preserve(renderModal); render(); }
+    toast((qty>1?`${qty} × ${m.n} adicionados`:`${m.n} adicionado`)+(S.mk.join?' ao combate.':' aos NPCs.')); preserve(renderModal); render(); }
 });
-Object.assign(CH,{ mkRoll(el){ S.mk.rollHp=el.checked; } });
+Object.assign(CH,{ mkRoll(el){ S.mk.rollHp=el.checked; }, mkJoin(el){ S.mk.join=el.checked; } });
 document.addEventListener('input',e=>{ const el=e.target; if(!el.dataset||!el.dataset.mk||!S.mk) return;
   S.mk[el.dataset.mk]=el.value; if(el.dataset.mk!=='qty') S.mk.limit=80; if(el.dataset.mk==='qty'){ $$('[data-act=mkAdd]').forEach(b=>b.innerHTML=`${IC.plus} ${(+el.value||1)>1?`Adicionar ${Math.min(20,+el.value)}`:'Adicionar'}`); return; }
   preserve(renderModal); });
+
+
+/* ===== Combate: iniciativa, ficha de combate, condições ligadas à ficha =====
+   As condições ficam na ficha (sh.conds) e são espelhadas nos tokens da cena ativa do mapa.
+   Um NPC "no combate" (sh.onMap) entra na iniciativa e vira token no mapa. */
+IC.map = '<svg viewBox="0 0 48 48" class="i"><path d="M4 10l12-5 16 5 12-5v33l-12 5-16-5-12 5z"/><path d="M16 5v33M32 10v33"/></svg>';
+const COND_BY = Object.fromEntries(TT_CONDICOES.map(c=>[c.chave,c]));
+const condsOf = sh=> (sh&&Array.isArray(sh.conds)?sh.conds:[]).filter(k=>COND_BY[k]);
+const sameSet = (a,b)=>{ a=[...new Set(a||[])].sort(); b=[...new Set(b||[])].sort(); return a.length===b.length&&a.every((x,i)=>x===b[i]); };
+
+/* ---- chips de condição (com explicação ao passar o mouse) ---- */
+function condChips(sh,o={}){
+  const ed=o.edit!==undefined?o.edit:canEdit(sh), cs=condsOf(sh);
+  const chips=cs.map(k=>{ const c=COND_BY[k]; return `<span class="cond-chip" data-cond="${k}" tabindex="0">${c.icone} ${h(c.nome)}${ed?`<button class="cond-x" data-act="condDel" data-v="${k}" data-id="${sh.id}" aria-label="Tirar ${h(c.nome)}">×</button>`:''}</span>`; }).join('');
+  const add=ed?`<select class="cond-add" data-act-change="condAdd" data-id="${sh.id}" aria-label="Adicionar condição"><option value="">+ Condição</option>${TT_CONDICOES.filter(c=>!cs.includes(c.chave)).map(c=>`<option value="${c.chave}">${c.icone} ${h(c.nome)}</option>`).join('')}</select>`:'';
+  return (chips||add)?`<div class="cond-bar">${chips}${add}</div>`:'';
+}
+const condIcons = sh=> condsOf(sh).map(k=>`<span class="cond-ic" data-cond="${k}" tabindex="0">${COND_BY[k].icone}</span>`).join('');
+const condTipHTML = keys=> keys.map(k=>COND_BY[k]).filter(Boolean).map(c=>`<div class="ct-i"><b>${c.icone} ${h(c.nome)}</b><span>${h(c.descricao)}</span></div>`).join('');
+function tokenTipHTML(s){
+  const cs=condsOf(s), seeHp=isGM()||s.kind==='pc';
+  return `<div class="ct-h">${h(s.name||'Sem nome')}</div>${seeHp?`<div class="ct-sub">PV ${num(s.hpCur)}/${num(s.hpMax)}${num(s.hpTemp)?` · +${num(s.hpTemp)} temp.`:''} · CA ${num(s.ac)||10}</div>`:''}
+    ${cs.length?condTipHTML(cs):'<div class="ct-sub">Sem condições.</div>'}`;
+}
+const condTip=(()=>{ const el=document.createElement('div'); el.className='cond-tip'; el.hidden=true; el.setAttribute('role','tooltip'); document.body.appendChild(el); return el; })();
+let condTipFor=null, condTipTimer=0;
+function showCondTip(target,html){
+  if(!html){ condTip.hidden=true; condTipFor=null; return; }
+  condTipFor=target; condTip.innerHTML=html; condTip.hidden=false;
+  const r=target.getBoundingClientRect(), tw=condTip.offsetWidth, th=condTip.offsetHeight;
+  let x=r.left+r.width/2-tw/2; x=Math.max(8,Math.min(innerWidth-tw-8,x));
+  let y=r.top-th-8; if(y<8) y=Math.min(innerHeight-th-8,r.bottom+8);
+  condTip.style.left=x+'px'; condTip.style.top=y+'px';
+}
+function condTipTarget(t){
+  if(!t||!t.closest) return null;
+  const c=t.closest('[data-cond]'); if(c) return [c,condTipHTML([c.dataset.cond])];
+  const tk=t.closest('#ttHost .bm-token'); if(tk){ const s=sheetById(tk.dataset.tk); if(s){ tk.removeAttribute('title'); return [tk,tokenTipHTML(s)]; } }
+  return null;
+}
+document.addEventListener('mouseover',e=>{ if(ptrDown) return; const r=condTipTarget(e.target); if(r){ if(r[0]!==condTipFor) showCondTip(r[0],r[1]); } else if(condTipFor){ showCondTip(null); } });
+document.addEventListener('focusin',e=>{ const r=condTipTarget(e.target); if(r&&r[0].matches('[data-cond]')) showCondTip(r[0],r[1]); });
+document.addEventListener('focusout',()=>{ if(condTipFor&&condTipFor.matches&&condTipFor.matches('[data-cond]')) showCondTip(null); });
+document.addEventListener('pointerdown',e=>{ showCondTip(null);
+  if(e.pointerType!=='mouse'){ const c=e.target.closest&&e.target.closest('[data-cond]'); if(c&&!e.target.closest('button')){ clearTimeout(condTipTimer); setTimeout(()=>{ showCondTip(c,condTipHTML([c.dataset.cond])); condTipTimer=setTimeout(()=>showCondTip(null),4000); },0); } } },true);
+window.addEventListener('scroll',()=>{ if(condTipFor) showCondTip(null); },{passive:true,capture:true});
+
+/* ---- espelho das condições: ficha <-> tokens da cena ativa ---- */
+const TT_ST={cena:null,toks:{},ready:false,seen:{},pushed:{},sig:''};
+function ttStReset(){ TT_ST.cena=null; TT_ST.toks={}; TT_ST.ready=false; TT_ST.seen={}; TT_ST.pushed={}; TT_ST.sig=''; }
+let ttMapTimer=0;
+function ttMapChanged(){ clearTimeout(ttMapTimer); ttMapTimer=setTimeout(()=>{
+  ttCondFromMap(); ttCondToMap();
+  const sig=JSON.stringify([TT_ST.cena,cbtCombatants().map(s=>[s.id,ttHidden(s.id)])]);
+  if(sig!==TT_ST.sig){ TT_ST.sig=sig; safeRender(); }
+},0); }
+const ttKey = sid=> TT_ST.cena+'__'+sid;
+const ttHidden = sid=>{ const t=TT_ST.cena&&TT_ST.toks[ttKey(sid)]; return !!(t&&t.oculto); };
+const inCombat = s=> s.kind==='pc'||(s.kind==='npc'&&s.onMap);
+function ttCondFromMap(){
+  if(!TT_ST.cena||!TT_ST.ready) return; let changed=false;
+  S.sheets.filter(inCombat).forEach(s=>{
+    const k=ttKey(s.id), t=TT_ST.toks[k]; if(!t) return;
+    const mc=(t.cond||[]).filter(x=>COND_BY[x]), cur=JSON.stringify([...mc].sort()), prev=TT_ST.seen[k]; TT_ST.seen[k]=cur;
+    if(TT_ST.pushed[k]===cur) delete TT_ST.pushed[k];
+    if(!canEdit(s)) return;
+    const fromMap=prev!==undefined&&prev!==cur, legacy=prev===undefined&&s.conds===undefined&&mc.length;
+    if((fromMap||legacy)&&!sameSet(condsOf(s),mc)){ s.conds=mc; saveNow(s); changed=true; }
+  });
+  if(changed) safeRender();
+}
+function ttCondToMap(){
+  if(!ttMesa||!TT_ST.cena||!TT_ST.ready) return;
+  ttCondFromMap();   // primeiro absorve o que mudou no mapa; senão uma ficha desatualizada sobrescreveria o token
+  S.sheets.filter(inCombat).forEach(s=>{
+    if(!canEdit(s)) return;
+    const k=ttKey(s.id), t=TT_ST.toks[k], mc=t?(t.cond||[]).filter(x=>COND_BY[x]):[], sc=condsOf(s);
+    if(sameSet(sc,mc)) return;
+    const want=JSON.stringify([...sc].sort()); if(TT_ST.pushed[k]===want) return;
+    TT_ST.pushed[k]=want;
+    // mantém marcações antigas que a ficha não conhece (caído/morto da versão anterior)
+    const extra=t?(t.cond||[]).filter(x=>!COND_BY[x]):[];
+    try{ ttMesa.definirCondicoes(s.id,sc.concat(extra)); }catch(e){}
+  });
+}
+
+/* ---- quem luta, em que ordem ---- */
+function cbtCombatants(){
+  const gm=isGM();
+  return ttTokens().map(t=>sheetById(t.id)).filter(Boolean).filter(s=>gm||s.kind==='pc'||!ttHidden(s.id));
+}
+const canOpenCbt = s=> !!s&&(isGM()||(s.kind==='pc'&&s.ownerId===S.me.id));
+function cbtTurn(){ try{ return ttMesa?ttMesa.turno():{turno:null,rodada:1,livre:false}; }catch(e){ return {turno:null,rodada:1,livre:false}; } }
+function iniActive(){ const t=cbtTurn(); return !!t.turno||S.sheets.some(s=>(s.kind==='npc'&&s.onMap)||(inCombat(s)&&s.initRoll!=null)); }
+function cbtSub(s){
+  if(s.kind==='npc') return s.meta||'NPC';
+  const c=CLASSES[s.cls]; return [c&&(c.n+' '+shLevel(s)),s.ownerId&&S.camp&&S.camp.names?S.camp.names[s.ownerId]:''].filter(Boolean).join(' · ');
+}
+function iniPanel(ctx){
+  const gm=isGM(), list=cbtCombatants(), tr=cbtTurn(), cur=tr.turno, curS=cur?sheetById(cur):null;
+  const sel=ctx==='map'?(cbtSelected()||{}).id:S.openSheet;
+  const curName=curS?((!gm&&curS.kind==='npc'&&ttHidden(curS.id))?'alguém':(curS.name||'Sem nome')):'';
+  const status=tr.livre?'<span class="ini-st livre">Movimento livre</span>':curS?`<span class="ini-st on">Rodada ${tr.rodada} · vez de <b>${h(curName)}</b></span>`:'<span class="ini-st">Combate não iniciado</span>';
+  const myTurn=curS&&curS.kind==='pc'&&curS.ownerId===S.me.id;
+  const fold=ctx==='sheet'&&S.iniFold;
+  const rows=list.map(s=>{
+    const ini=s.initRoll==null?null:num(s.initRoll), ed=canEdit(s), open=canOpenCbt(s);
+    const seeHp=gm||s.kind==='pc', mx=Math.max(1,num(s.hpMax)||1), pct=Math.max(0,Math.min(100,num(s.hpCur)/mx*100));
+    const av=s.portrait?`<img src="${s.portrait}" alt="">`:`<span>${h((s.name||'?').trim().charAt(0).toUpperCase())}</span>`;
+    const inner=`<span class="ini-av ${s.kind}">${av}</span><span class="ini-txt"><b>${h(s.name||'Sem nome')}</b><small>${h(cbtSub(s))}</small>
+      ${seeHp?`<span class="ini-hp ${pct<=25?'low':pct<=50?'mid':''}"><i style="width:${pct}%"></i></span><small class="ini-hpn">PV ${num(s.hpCur)}/${num(s.hpMax)}${gm||s.ownerId===S.me.id?` · CA ${num(s.ac)||10}`:''}</small>`:''}</span>`;
+    return `<div class="ini-row ${s.id===cur?'turn':''} ${s.id===sel?'sel':''} ${num(s.hpCur)<=0&&num(s.hpMax)>0?'down':''} ${s.kind}">
+      <div class="ini-val">${gm?`<input class="ini-in" type="number" inputmode="numeric" value="${ini??''}" placeholder="—" data-act-change="iniSet" data-id="${s.id}" aria-label="Iniciativa de ${h(s.name||'')}">`:`<b>${ini??'—'}</b>`}
+        ${ed?`<button class="ini-roll" data-act="rollInit" data-id="${s.id}" title="Rolar iniciativa" aria-label="Rolar iniciativa de ${h(s.name||'')}">${IC.d20}</button>`:''}</div>
+      ${open?`<button class="ini-open" data-act="iniOpen" data-ctx="${ctx}" data-id="${s.id}" title="${ctx==='map'?'Abrir a ficha de combate':'Abrir a ficha'}">${inner}</button>`:`<div class="ini-open off">${inner}</div>`}
+      <span class="ini-conds">${condIcons(s)}</span>
+      ${gm&&s.kind==='npc'?`<button class="icon-btn ini-x" data-act="ttNpcOff" data-id="${s.id}" title="Tirar do combate" aria-label="Tirar ${h(s.name||'NPC')} do combate">${IC.x}</button>`:''}
+    </div>`; }).join('');
+  const off=S.sheets.filter(s=>s.kind==='npc'&&!s.onMap);
+  return `<section class="ini-panel ${fold?'fold':''}">
+    <div class="ini-head"><h3>${IC.d20} Iniciativa</h3><span class="grow"></span>${ctx==='sheet'?`<button class="icon-btn" data-act="iniFold" aria-expanded="${!fold}" title="${fold?'Mostrar':'Recolher'}">${IC.chev}</button>`:''}</div>
+    ${fold?'':`${status}
+    ${gm?`<div class="ini-turn"><button class="btn sm" data-act="cbTurn" data-v="ant" ${cur?'':'disabled'} title="Voltar a vez">◀</button><button class="btn sm primary" data-act="cbTurn" data-v="prox" ${list.length?'':'disabled'}>${cur?'Próximo ▶':'▶ Iniciar'}</button><button class="btn sm ghost" data-act="cbTurn" data-v="parar" ${cur?'':'disabled'} title="Encerrar o combate">■</button></div>`
+      :myTurn?`<div class="ini-turn"><button class="btn sm primary" data-act="cbTurn" data-v="prox">Passar a vez ▶</button></div>`:''}
+    <div class="ini-list">${rows||'<p class="small muted" style="padding:.6rem">Ninguém no combate ainda.</p>'}</div>
+    ${gm?`<div class="ini-gm">
+      <div class="row" style="gap:.4rem"><select class="inp ini-add" data-act-change="ttNpcOn" aria-label="Adicionar NPC ao combate"><option value="">+ NPC ao combate…</option>${off.map(s=>`<option value="${s.id}">${h(s.name||'NPC sem nome')}</option>`).join('')}</select><button class="btn sm" data-act="monPicker" data-join="1" title="Trazer monstros do livro direto para o combate">${IC.book} Do livro</button></div>
+      <div class="row" style="gap:.4rem"><button class="btn sm" data-act="ttNpcInit" ${S.sheets.some(s=>s.kind==='npc'&&s.onMap)?'':'disabled'}>${IC.d20} Rolar NPCs</button><button class="btn sm ghost" data-act="ttClearInit">Limpar</button></div></div>`
+      :S.sheets.some(s=>s.kind==='pc'&&s.ownerId===S.me.id&&s.initRoll==null)?`<p class="small muted ini-hint">Role a sua iniciativa no dado ao lado do seu nome.</p>`:''}`}
+  </section>`;
+}
+
+/* ---- ficha de combate ---- */
+function cbtSelected(){
+  let s=S.cbSel&&sheetById(S.cbSel);
+  if(s&&canOpenCbt(s)&&inCombat(s)) return s;
+  if(!isGM()) return S.sheets.find(x=>x.kind==='pc'&&x.ownerId===S.me.id)||null;
+  const t=cbtTurn().turno; s=t&&sheetById(t); return s||null;
+}
+function cbtStat(lab,inner,cls=''){ return `<div class="cb-stat ${cls}"><span class="lab">${lab}</span>${inner}</div>`; }
+function cbtHp(sh){
+  const mx=Math.max(1,num(sh.hpMax)||1), pct=Math.max(0,Math.min(100,num(sh.hpCur)/mx*100));
+  return `<div class="cb-stat cb-hp"><span class="lab">Pontos de Vida</span>
+    <div class="hp-row">${bi(sh,'hpCur',{num:true,cls:'cur',label:'PV atuais'})}<span class="muted">/</span>${bi(sh,'hpMax',{num:true,label:'PV máximos',style:'width:3.2rem'})}${sh.kind==='pc'?`<span class="small muted">temp.</span>${bi(sh,'hpTemp',{num:true,label:'PV temporários',style:'width:2.6rem'})}`:''}</div>
+    <div class="hpbar"><i style="width:${pct}%"></i></div>
+    ${ED?`<div class="hp-ctl"><input class="ink num" type="number" min="0" id="hpAmt-${sh.id}" data-k="hpAmt-${sh.id}" aria-label="Quantidade" placeholder="0"><button class="btn sm" data-act="hp" data-v="dmg" data-id="${sh.id}">Dano</button><button class="btn sm" data-act="hp" data-v="heal" data-id="${sh.id}">Cura</button></div>`:''}</div>`;
+}
+function cbtHead(sh){
+  const pc=sh.kind==='pc';
+  return `<header class="cb-head">
+    <div class="cb-por">${sh.portrait?`<img src="${sh.portrait}" alt="Retrato de ${h(sh.name||'')}">`:`<span class="portrait-empty">${IC.user}</span>`}${ED?`<button class="portrait-btn" data-act="portraitModal" data-id="${sh.id}" aria-label="${sh.portrait?'Trocar imagem':'Adicionar imagem'}"></button>`:''}</div>
+    <div class="cb-id"><h2 class="cb-name">${h(sh.name||'Sem nome')}</h2><div class="small muted">${h(cbtSub(sh))}</div>${condChips(sh,{edit:ED})}</div>
+    <div class="cb-tools">
+      ${pc?`<label class="cb-insp" title="Inspiração Heroica"><button class="pip ${sh.insp?'on':''}" data-act="insp" data-id="${sh.id}" ${ED?'':'disabled'} aria-pressed="${!!sh.insp}" aria-label="Inspiração Heroica"></button><span class="small">Inspiração</span></label>
+        <div class="advbar" role="group" aria-label="Rolagens de d20">${[['normal','Normal'],['adv','Vant.'],['dis','Desv.']].map(([k,l])=>`<button data-act="adv" data-v="${k}" aria-pressed="${S.adv===k}">${l}</button>`).join('')}</div>`:''}
+      <button class="btn sm" data-act="cbFull" data-id="${sh.id}">Ficha completa</button>
+      ${isGM()&&sh.kind==='npc'?`<button class="btn sm ghost" data-act="cbDup" data-id="${sh.id}" title="Mais um igual, já no combate">${IC.copy} +1</button><label class="check small"><input type="checkbox" data-s="rq.secret" data-k="npcsecret" ${S.rq.secret?'checked':''}> Rolagens secretas</label>`:''}
+      <button class="icon-btn" data-act="cbMin" aria-expanded="${!S.cbMin}" title="${S.cbMin?'Mostrar a ficha':'Recolher a ficha'}">${IC.chev}</button>
+    </div></header>`;
+}
+function cbtAttacks(sh){
+  const pb=pbOf(sh), m=k=>mod(sh.ab[k]);
+  const rows=(sh.attacks||[]).map((a,i)=>{ const bonus=m(a.ab||'for')+(a.prof?pb:0)+(+a.bonus||0); const dexpr=a.dmg?withMod(a.dmg,a.addMod?m(a.ab||'for'):0):'';
+    return `<div class="cb-atk"><button class="dice-btn big" data-act="rollFull" data-v="${i}" data-id="${sh.id}" title="Rolar ataque e dano" aria-label="Rolar ataque e dano de ${h(a.name||'ataque')}">${IC.d20}</button>
+      <div class="grow"><b>${h(a.name||'Ataque')}</b>${a.type?`<div class="small muted">${h(a.type)}</div>`:''}</div>
+      <button class="roll-chip" data-act="rollAtk" data-v="${i}" data-id="${sh.id}" title="Só o ataque">${sgn(bonus)}</button><button class="roll-chip" data-act="rollDmg" data-v="${i}" data-id="${sh.id}" ${a.dmg?'':'disabled'} title="Só o dano">${h(dexpr||'—')}</button></div>`; }).join('');
+  return `<h3 class="sec-t">Ataques e armas</h3>${rows||'<p class="muted small">Nenhum ataque na ficha. Adicione na ficha completa.</p>'}`;
+}
+function cbtSpells(sh){
+  if(!CAST_COUNTS[sh.cls]&&!(sh.spells||[]).length) return '';
+  const list=(sh.spells||[]).map((s,i)=>({s,i,o:spellOf(s)})).filter(({s,o})=>o.l===0||s.prep||(isWiz(sh)&&!inBook(sh,s)))
+    .sort((a,b)=>(a.o.l-b.o.l)||String(a.o.n||a.s.name).localeCompare(String(b.o.n||b.s.name),'pt'));
+  const slots=[1,2,3,4,5,6,7,8,9].filter(l=>((sh.slots||{})[l]||{}).max>0);
+  const dc=spellDC(sh);
+  return `<h3 class="sec-t">Magias preparadas ${dc?`<span class="small muted cb-dc">CD ${dc} · ataque <button class="roll-chip" data-act="rollSpellAtk" data-id="${sh.id}">${sgn(spellAtkBonus(sh))}</button></span>`:''}</h3>
+    ${slots.length?`<div class="cb-slots">${slots.map(l=>{ const s=sh.slots[l]; return `<div class="cb-slot"><span class="lab">${l}º</span><div class="pips">${Array.from({length:Math.min(+s.max||0,9)},(_,i)=>`<button class="pip ${i<(s.used||0)?'on':''}" data-act="slot" data-v="${l}" data-n="${i+1}" data-id="${sh.id}" ${ED?'':'disabled'} aria-label="Espaço de ${l}º círculo ${i+1}${i<(s.used||0)?' gasto':''}"></button>`).join('')}</div></div>`; }).join('')}</div>`:''}
+    ${list.length?`<div class="cb-spells">${list.map(({s,i,o})=>{ const sp=s.ref&&SPELL_BY[s.ref]; const mt=sp?spellMath(sp,sh,sp.l):{};
+      return `<div class="cb-sp">${sp?`<button class="sp-link" data-act="spellInfo" data-v="${h(s.ref)}">${h(s.ref)}</button>`:`<b>${h(s.name||'Magia')}</b>`}
+        <span class="small muted">${o.l===0?'Truque':o.l+'º'}${sp?' · '+h(sp.ct):''}${sp&&/Concentração/.test(sp.du)?' · C':''}</span>${sh.conc&&sh.conc.name===s.ref?'<span class="pill conc-pill">concentrando</span>':''}
+        <span class="grow"></span>${sp?`<button class="roll-chip cast-chip" data-act="castSpell" data-v="${i}" data-id="${sh.id}" title="Conjurar">${IC.d20}${mt.expr?' '+h(mt.expr):' Conjurar'}</button>`:''}</div>`; }).join('')}</div>`
+      :'<p class="muted small">Nenhuma magia preparada. Marque as preparadas na aba Magias da ficha completa.</p>'}`;
+}
+function cbtFeats(sh){
+  const n=['classFeats','speciesFeats','featsList'].reduce((a,k)=>a+((sh[k]||[]).length),0);
+  return `<details class="cb-feats" ${S.cbFeat?'open':''}><summary data-act-sum="cbFeat">Características <span class="small muted">${n}</span></summary>
+    ${entryList(sh,'classFeats',{title:'De classe',pick:'cfPicker',pickLabel:'Escolher do livro',addLabel:'Adicionar característica de classe',empty:'Nenhuma.'})}
+    ${entryList(sh,'speciesFeats',{title:'De espécie',pick:'stPicker',pickLabel:'Escolher do livro',addLabel:'Adicionar característica de espécie',empty:'Nenhuma.',mt:true})}
+    ${entryList(sh,'featsList',{title:'Talentos',pick:'featPicker',pickLabel:'Escolher do livro',addLabel:'Adicionar talento',empty:'Nenhum.',mt:true})}</details>`;
+}
+function cbtInv(sh){
+  const coins=COIN.map(([k,s])=>(+(sh.coins||{})[k]||0)?`${sh.coins[k]} ${s}`:'').filter(Boolean).join(' · ');
+  return `<details class="cb-feats" ${S.cbInv?'open':''}><summary data-act-sum="cbInv">Inventário <span class="small muted">${(sh.items||[]).length} ite${(sh.items||[]).length===1?'m':'ns'}${coins?' · '+coins:''}</span></summary>
+    ${entryList(sh,'items',{title:'Itens',pick:'eqPicker',pickLabel:`${IC.bag} Adquirir`,addLabel:'Adicionar item',empty:'Nenhum item.'})}</details>`;
+}
+function cbtPC(sh){
+  const lvl=shLevel(sh), pb=profBonus(lvl), m=k=>mod(sh.ab[k]);
+  const perc=10+m('sab')+((sh.skills||{}).percepcao||0)*pb, ini=m('des')+(+sh.initMisc||0);
+  const down=num(sh.hpCur)<=0&&num(sh.hpMax)>0, ds=sh.ds||{s:0,f:0};
+  return `<div class="cb-stats">
+      ${cbtStat('CA',bi(sh,'ac',{num:true,label:'CA',cls:'cb-big'}),'shield')}
+      ${cbtHp(sh)}
+      ${cbtStat('Deslocamento',bi(sh,'speed',{label:'Deslocamento',cls:'cb-mid'}))}
+      ${cbtStat('Iniciativa',`<button class="rollable v" data-act="rollInit" data-id="${sh.id}">${sgn(ini)}</button><div class="small muted">rolada: ${sh.initRoll??'—'}</div>`)}
+      ${cbtStat('Percepção passiva',`<div class="v">${perc}</div>`)}
+      ${down?cbtStat('Testes contra Morte',`<div class="pips">${[1,2,3].map(i=>`<button class="pip ${ds.s>=i?'on':''}" data-act="ds" data-v="s" data-n="${i}" data-id="${sh.id}" ${ED?'':'disabled'} aria-label="Sucesso ${i}"></button>`).join('')}</div><div class="pips">${[1,2,3].map(i=>`<button class="pip f ${ds.f>=i?'on':''}" data-act="ds" data-v="f" data-n="${i}" data-id="${sh.id}" ${ED?'':'disabled'} aria-label="Falha ${i}"></button>`).join('')}</div><button class="btn sm" data-act="rollDeath" data-id="${sh.id}">Rolar</button>`,'cb-death'):''}
+    </div>
+    <div class="cb-cols"><div>${cbtAttacks(sh)}${cbtSpells(sh)}</div>
+      <div><div class="cb-row2">${concBox(sh)}${sheetRoller(sh)}</div>${cbtInv(sh)}${cbtFeats(sh)}</div></div>`;
+}
+function cbtNPC(sh){
+  return `<div class="cb-stats">
+      ${cbtStat('CA',bi(sh,'ac',{num:true,label:'CA',cls:'cb-big'}),'shield')}${cbtHp(sh)}
+      ${cbtStat('Deslocamento',bi(sh,'speed',{label:'Deslocamento',cls:'cb-mid'}))}
+      ${cbtStat('Iniciativa',`<button class="rollable v" data-act="rollInit" data-id="${sh.id}">${sgn(mod(sh.ab.des)+(+sh.initMisc||0))}</button><div class="small muted">rolada: ${sh.initRoll??'—'}</div>`)}
+      ${cbtStat('ND',`<div class="v">${h(sh.cr||'—')}</div>`)}
+    </div>
+    <div class="cb-cols"><div><h3 class="sec-t">Ações</h3>${(sh.actions||[]).map((a,i)=>`<div class="cb-atk"><button class="dice-btn big" data-act="npcFull" data-v="${i}" data-id="${sh.id}" ${a.dmg?'':'disabled'} title="Rolar" aria-label="Rolar ${h(a.name||'ação')}">${IC.d20}</button>
+        <div class="grow"><b>${h(a.name||'Ação')}</b>${a.desc?`<div class="small cb-desc">${h(a.desc)}</div>`:''}</div>
+        ${a.save?`<span class="pill npc-save">TR ${h(a.save)}</span>`:a.noAtk?'':`<button class="roll-chip" data-act="npcAtk" data-v="${i}" data-id="${sh.id}">${sgn(+a.atk||0)}</button>`}${a.dmg?`<button class="roll-chip" data-act="npcDmg" data-v="${i}" data-id="${sh.id}">${h(a.dmg)}</button>`:''}</div>`).join('')||'<p class="muted small">Sem ações.</p>'}</div>
+      <div><div class="cb-row2">${sheetRoller(sh)}</div>
+        <details class="cb-feats" ${S.cbFeat?'open':''}><summary data-act-sum="cbFeat">Traços e notas</summary>${sh.traits?`<div class="cb-text">${paras(sh.traits)}</div>`:'<p class="muted small">Sem traços.</p>'}${sh.notes?`<div class="cb-text small muted">${paras(sh.notes)}</div>`:''}</details></div></div>`;
+}
+function cbtSheet(sh){
+  ED=canEdit(sh);
+  return `<article class="sheet cbt ${S.cbMin?'min':''}">${cbtHead(sh)}${S.cbMin?'':(sh.kind==='npc'?cbtNPC(sh):cbtPC(sh))}</article>`;
+}
+function viewCombat(){
+  const sel=cbtSelected(), gm=isGM();
+  const empty=gm?`<div class="cbt-empty"><h3>Ficha de combate</h3><p class="muted">Clique em alguém na iniciativa para abrir a ficha de combate aqui. Para colocar NPCs no combate, use “+ NPC ao combate” ou “Do livro”.</p></div>`
+    :`<div class="cbt-empty"><h3>Ficha de combate</h3><p class="muted">Você ainda não tem personagem nesta campanha.</p></div>`;
+  return `<aside class="cbt-side">${iniPanel('map')}</aside><section class="cbt-sheet">${sel?cbtSheet(sel):empty}</section>`;
+}
+function mapHead(){
+  const c=S.camp, gm=isGM(), back=S.cbBack&&sheetById(S.cbBack);
+  return `<section class="map-head"><div class="row"><h1 class="map-title">${h(c.name)}</h1><span class="grow"></span>
+      ${back?`<button class="btn sm" data-act="cbBackSheet">${IC.back} Voltar à ficha de ${h(back.name||'personagem')}</button>`:''}
+      <button class="btn ghost sm" data-act="home">Todas as campanhas</button></div>
+    <nav class="ribbons" role="tablist">${gm?`<button class="ribbon" role="tab" aria-selected="false" data-act="campTab" data-v="gm">Área do Mestre</button>`:''}
+      <button class="ribbon" role="tab" aria-selected="false" data-act="campTab" data-v="players">Área dos Jogadores</button>
+      <button class="ribbon" role="tab" aria-selected="true" data-act="campTab" data-v="map">Mapa de Batalha</button></nav></section>`;
+}
+/* ficha normal com a iniciativa ao lado (quando há combate) */
+function sheetLayout(sh,inner){
+  if(!S.campId||!iniActive()) return inner;
+  return `<div class="sheet-layout ${S.iniFold?'folded':''}"><aside class="ini-side">${iniPanel('sheet')}</aside>${inner}</div>`;
+}
+
+Object.assign(A,{
+  condDel(el){ const s=sh_(el); if(!s||!canEdit(s)) return; s.conds=condsOf(s).filter(k=>k!==el.dataset.v); saveNow(s); showCondTip(null); render(); },
+  iniOpen(el){ const s=sh_(el); if(!canOpenCbt(s)) return; WQ.flushAll();
+    if(el.dataset.ctx==='sheet'){ S.openSheet=s.id; S.sheetTab='principal'; render(); window.scrollTo(0,0); return; }
+    S.cbSel=s.id; S.cbMin=false; render(); setTimeout(()=>{ const p=$('.cbt-sheet'); if(p&&p.getBoundingClientRect().top<0) p.scrollIntoView({block:'start',behavior:'smooth'}); },30); },
+  iniFold(){ S.iniFold=!S.iniFold; render(); },
+  cbTurn(el){ if(!ttMesa) return; const v=el.dataset.v; const t=cbtTurn(); const curS=t.turno&&sheetById(t.turno);
+    if(!isGM()&&!(v==='prox'&&curS&&curS.ownerId===S.me.id)) return;
+    try{ v==='parar'?ttMesa.pararTurnos():ttMesa.passarTurno(v); }catch(e){} setTimeout(safeRender,60); },
+  goMap(el){ WQ.flushAll(); S.cbSel=el.dataset.id; S.cbBack=el.dataset.id; S.cbMin=false; S.openSheet=null; S.campTab='map'; render(); window.scrollTo(0,0); },
+  cbFull(el){ WQ.flushAll(); S.cbBack=el.dataset.id; S.openSheet=el.dataset.id; S.sheetTab='principal'; render(); window.scrollTo(0,0); },
+  cbBackSheet(){ const s=sheetById(S.cbBack); if(!s) return; WQ.flushAll(); S.openSheet=s.id; S.sheetTab='principal'; render(); window.scrollTo(0,0); },
+  cbMin(){ S.cbMin=!S.cbMin; render(); },
+  async cbDup(el){ const s=sh_(el); if(!s||!isGM()) return; const c=clone(s); delete c.id;
+    const base=(s.name||'NPC').replace(/\s+\d+$/,''); c.name=monNames(base,1)[0];
+    c.initRoll=null; c.conds=[]; c.hpCur=c.hpMax; c.onMap=true; c.createdAt=Date.now();
+    const sid=await saveNewSheet(c); S.cbSel=sid; toast(`${c.name} entrou no combate.`); render(); }
+});
+Object.assign(CH,{
+  condAdd(el){ const s=sheetById(el.dataset.id), v=el.value; if(!s||!v||!COND_BY[v]||!canEdit(s)) return; s.conds=[...condsOf(s),v]; saveNow(s); render(); },
+  iniSet(el){ const s=sheetById(el.dataset.id); if(!s||!canEdit(s)) return; const v=String(el.value).trim(); s.initRoll=v===''?null:(Math.round(+v)||0); saveNow(s); setTimeout(safeRender,0); }
+});
+// <details> das seções retráteis: lembra se ficou aberto
+document.addEventListener('toggle',e=>{ const d=e.target; if(!(d instanceof HTMLDetailsElement)) return; const k=d.querySelector('summary')?.dataset.actSum; if(k) S[k]=d.open; },true);
 
 
 /* ===== Início ===== */
