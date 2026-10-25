@@ -3239,7 +3239,7 @@ function cleanRoll(r){
 }
 const SHEET_NUM=['initRoll','xp','level','pendingLv','hpMax','hpCur','hpTemp','ac','initMisc','hdUsed','pb','atk'];
 function cleanSheet(s){
-  SHEET_NUM.forEach(k=>{ if(s[k]!==undefined&&s[k]!==null&&k!=='atk') s[k]=num(s[k]); }); s.onMap=!!s.onMap;
+  SHEET_NUM.forEach(k=>{ if(s[k]!==undefined&&s[k]!==null&&k!=='atk') s[k]=num(s[k]); }); s.onMap=!!s.onMap; s.offCombat=!!s.offCombat;
   if(s.conds!==undefined) s.conds=Array.isArray(s.conds)?[...new Set(s.conds.filter(k=>typeof k==='string'&&TT_CONDS_OK.has(k)))].slice(0,20):[];
   if(s.ab) Object.keys(s.ab).forEach(k=>s.ab[k]=num(s.ab[k]));
   if(s.coins) Object.keys(s.coins).forEach(k=>s.coins[k]=num(s.coins[k]));
@@ -4222,7 +4222,7 @@ function viewSheet(sh){
     ${sh.kind==='pc'?`<div class="advbar" role="group" aria-label="Rolagens de d20">${[['normal','Normal'],['adv','Vantagem'],['dis','Desvantagem']].map(([k,l])=>`<button data-act="adv" data-v="${k}" aria-pressed="${S.adv===k}">${l}</button>`).join('')}</div>`:''}
     ${isGM()&&sh.kind==='pc'?`<label class="small muted" for="shown">Jogador</label><select class="inp" style="width:auto" id="shown" data-act-change="assign" data-id="${sh.id}"><option value="">Sem jogador</option>${memberOptions().map(([id,n])=>`<option value="${id}" ${sh.ownerId===id?'selected':''}>${h(n)}</option>`).join('')}</select>`:''}
     ${canEdit(sh)?`<button class="btn danger sm" data-act="delSheet" data-id="${sh.id}">${IC.trash} Excluir ficha</button>`:''}
-    ${isGM()&&sh.kind==='npc'?`<label class="check"><input type="checkbox" data-act-change="ttNpcToggle" data-id="${sh.id}" ${sh.onMap?'checked':''}> No combate (iniciativa e mapa)</label>`:''}
+    ${isGM()?`<label class="check"><input type="checkbox" data-act-change="ttNpcToggle" data-id="${sh.id}" ${inCombat(sh)?'checked':''}> No combate (iniciativa e mapa)</label>`:''}
     ${isGM()&&sh.kind==='npc'?`<label class="check"><input type="checkbox" data-s="rq.secret" data-k="npcsecret" ${S.rq.secret?'checked':''}> Rolagens secretas</label>`:''}</div>`;
   return sheetLayout(sh,`<main class="sheet-wrap">${top}<article class="sheet">${sh.kind==='npc'?npcBody(sh):pcBody(sh)}</article></main>`);
 }
@@ -4803,7 +4803,7 @@ const A = {
   linApply(){ const m=S.modal, s=sheetById(m.sid); const p=lineagePlan(s,m.lk); if(!p) return; if(p.needsSkills&&m.picks.length<2) return;
     applyLineage(s,m.lk,p.needsSkills?m.picks:[]); saveNow(s); closeModal(); render();
     toast(`${p.L.n} aplicada.${p.sp.ac?' Revise a CA: a armadura natural de '+p.sp.n+' não vale mais.':''}`); },
-  ttNpcOff(el){ const s=sh_(el); if(!s||!isGM()) return; s.onMap=false; s.initRoll=null; if(S.cbSel===s.id) S.cbSel=null; saveNow(s); render(); },
+  ttNpcOff(el){ const s=sh_(el); if(!s||!isGM()) return; if(s.kind==='pc') s.offCombat=true; else s.onMap=false; s.initRoll=null; toast(`${s.name||'Personagem'} saiu do combate.`); if(S.cbSel===s.id) S.cbSel=null; saveNow(s); render(); },
   async ttNpcInit(){ if(!isGM()) return; const list=S.sheets.filter(s=>s.kind==='npc'&&s.onMap); const res=[];
     list.forEach(s=>{ const r=rollExpr(withMod('1d20',mod(num(s.ab.des)||10)+num(s.initMisc))); s.initRoll=r.total; saveNow(s); res.push(`${s.name||'NPC'} ${r.total}`); });
     toast('Iniciativa dos NPCs: '+res.join(', ')+'.'); render(); },
@@ -4929,8 +4929,8 @@ const A = {
   async wCreate(){ const pc=buildPC(); const btn=$('[data-act="wCreate"]'); if(btn) btn.disabled=true; try{ const sid=await saveNewSheet(pc); closeModal(); S.openSheet=sid; S.sheetTab='principal'; toast(`${pc.name} entrou na campanha.`); render(); window.scrollTo(0,0); }catch(e){ toast('Não foi possível criar a ficha. Tente de novo.','err'); if(btn) btn.disabled=false; } }
 };
 const CH = {
-  ttNpcOn(el){ const s=sheetById(el.value); if(!s||!isGM()) return; s.onMap=true; saveNow(s); toast(`${s.name||'NPC'} entrou no combate e no mapa.`); render(); },
-  ttNpcToggle(el){ const s=sheetById(el.dataset.id); if(!s||!isGM()) return; s.onMap=el.checked; if(!s.onMap) s.initRoll=null; saveNow(s); render(); },
+  ttNpcOn(el){ const s=sheetById(el.value); if(!s||!isGM()) return; if(s.kind==='pc') s.offCombat=false; else s.onMap=true; saveNow(s); toast(`${s.name||'NPC'} entrou no combate e no mapa.`); render(); },
+  ttNpcToggle(el){ const s=sheetById(el.dataset.id); if(!s||!isGM()) return; if(s.kind==='pc') s.offCombat=!el.checked; else s.onMap=el.checked; if(!el.checked) s.initRoll=null; saveNow(s); render(); },
   lineage(el){ const s=sheetById(el.dataset.id); const v=el.value; if(!s) return;
     if(!v){ if(!s.lineage) return; const n=LINEAGES[s.lineage].n; confirmBox('Remover linhagem?',`Os traços de ${n} saem da ficha, e os de ${SPECIES[s.species].n} voltam, com o deslocamento e as perícias de antes.`,'Remover linhagem',()=>{ revertLineage(s); saveNow(s); toast(`Linhagem ${n} removida.`); render(); },false); render(); return; }
     openModal({type:'lineage',sid:s.id,lk:v,picks:[]}); render(); },
@@ -5111,7 +5111,7 @@ function ttUserName(uid){
 }
 function ttSpeed(sp){ const m=String(sp||'').match(/(\d+(?:[.,]\d+)?)/); return m?Number(m[1].replace(',','.')):null; }
 function ttTokens(){
-  const out=S.sheets.filter(s=>s.kind==='pc'||(s.kind==='npc'&&s.onMap)).map(s=>{
+  const out=S.sheets.filter(s=>(s.kind==='pc'&&!s.offCombat)||(s.kind==='npc'&&s.onMap)).map(s=>{
     const pc=s.kind==='pc'; const c=CLASSES[s.cls], sp=SPECIES[s.species];
     const sub=pc?[s.lineage&&LINEAGES[s.lineage]?LINEAGES[s.lineage].n:(sp&&sp.n),c&&(c.n+' '+shLevel(s))].filter(Boolean).join(' · '):(s.meta||'');
     const temp=num(s.hpTemp);
@@ -5448,7 +5448,7 @@ function ttMapChanged(){ clearTimeout(ttMapTimer); ttMapTimer=setTimeout(()=>{
 },0); }
 const ttKey = sid=> TT_ST.cena+'__'+sid;
 const ttHidden = sid=>{ const t=TT_ST.cena&&TT_ST.toks[ttKey(sid)]; return !!(t&&t.oculto); };
-const inCombat = s=> s.kind==='pc'||(s.kind==='npc'&&s.onMap);
+const inCombat = s=> (s.kind==='pc'&&!s.offCombat)||(s.kind==='npc'&&s.onMap);
 /* Quem grava a ficha por conta própria: o dono (PJ com jogador) ou o mestre (NPC e PJ sem jogador),
    ou o aparelho que acabou de mexer nela. Assim um aparelho com a ficha desatualizada nunca sobrescreve PV etc. */
 const ttCtrl = s=> s.ownerId?s.ownerId===S.me.id:isGM();
@@ -5519,9 +5519,9 @@ function iniPanel(ctx){
         ${ed?`<button class="ini-roll" data-act="rollInit" data-id="${s.id}" title="Rolar iniciativa" aria-label="Rolar iniciativa de ${h(s.name||'')}">${IC.d20}</button>`:''}</div>
       ${open?`<button class="ini-open" data-act="iniOpen" data-ctx="${ctx}" data-id="${s.id}" title="${ctx==='map'?'Abrir a ficha de combate':'Abrir a ficha'}">${inner}</button>`:`<div class="ini-open off">${inner}</div>`}
       <span class="ini-conds">${condIcons(s)}</span>
-      ${gm&&s.kind==='npc'?`<button class="icon-btn ini-x" data-act="ttNpcOff" data-id="${s.id}" title="Tirar do combate" aria-label="Tirar ${h(s.name||'NPC')} do combate">${IC.x}</button>`:''}
+      ${gm?`<button class="icon-btn ini-x" data-act="ttNpcOff" data-id="${s.id}" title="Tirar do combate" aria-label="Tirar ${h(s.name||(s.kind==='pc'?'personagem':'NPC'))} do combate">${IC.x}</button>`:''}
     </div>`; }).join('');
-  const off=S.sheets.filter(s=>s.kind==='npc'&&!s.onMap);
+  const off=S.sheets.filter(s=>s.kind==='npc'&&!s.onMap), offPc=S.sheets.filter(s=>s.kind==='pc'&&s.offCombat);
   return `<section class="ini-panel ${fold?'fold':''}">
     <div class="ini-head"><h3>${IC.d20} Iniciativa</h3><span class="grow"></span>${ctx==='sheet'?`<button class="icon-btn" data-act="iniFold" aria-expanded="${!fold}" title="${fold?'Mostrar':'Recolher'}">${IC.chev}</button>`:''}</div>
     ${fold?'':`${status}
@@ -5529,9 +5529,9 @@ function iniPanel(ctx){
       :myTurn?`<div class="ini-turn"><button class="btn sm primary" data-act="cbTurn" data-v="prox">Passar a vez ▶</button></div>`:''}
     <div class="ini-list">${rows||'<p class="small muted" style="padding:.6rem">Ninguém no combate ainda.</p>'}</div>
     ${gm?`<div class="ini-gm">
-      <div class="row" style="gap:.4rem"><select class="inp ini-add" data-act-change="ttNpcOn" aria-label="Adicionar NPC ao combate"><option value="">+ NPC ao combate…</option>${off.map(s=>`<option value="${s.id}">${h(s.name||'NPC sem nome')}</option>`).join('')}</select><button class="btn sm" data-act="monPicker" data-join="1" title="Trazer monstros do livro direto para o combate">${IC.book} Do livro</button></div>
+      <div class="row" style="gap:.4rem"><select class="inp ini-add" data-act-change="ttNpcOn" aria-label="Adicionar ao combate"><option value="">+ Adicionar ao combate…</option>${offPc.length?`<optgroup label="Personagens">${offPc.map(s=>`<option value="${s.id}">${h(s.name||'Personagem sem nome')}</option>`).join('')}</optgroup>`:''}${off.length?`<optgroup label="NPCs">${off.map(s=>`<option value="${s.id}">${h(s.name||'NPC sem nome')}</option>`).join('')}</optgroup>`:''}</select><button class="btn sm" data-act="monPicker" data-join="1" title="Trazer monstros do livro direto para o combate">${IC.book} Do livro</button></div>
       <div class="row" style="gap:.4rem"><button class="btn sm" data-act="ttNpcInit" ${S.sheets.some(s=>s.kind==='npc'&&s.onMap)?'':'disabled'}>${IC.d20} Rolar NPCs</button><button class="btn sm ghost" data-act="ttClearInit">Limpar</button></div></div>`
-      :S.sheets.some(s=>s.kind==='pc'&&s.ownerId===S.me.id&&s.initRoll==null)?`<p class="small muted ini-hint">Role a sua iniciativa no dado ao lado do seu nome.</p>`:''}`}
+      :S.sheets.some(s=>s.kind==='pc'&&!s.offCombat&&s.ownerId===S.me.id&&s.initRoll==null)?`<p class="small muted ini-hint">Role a sua iniciativa no dado ao lado do seu nome.</p>`:''}`}
   </section>`;
 }
 
