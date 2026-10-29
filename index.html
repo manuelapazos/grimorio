@@ -1355,6 +1355,27 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
 .trb-t .linklike{color:var(--gold2);text-decoration:underline dotted;text-align:left}
 .trb-sub{margin:.3rem 0 0 .6rem;display:flex;flex-direction:column;gap:.15rem}
 @media (max-width:720px){.trb-grid{grid-template-columns:1fr}.trb-nav{flex-direction:row;flex-wrap:wrap;max-height:none}.trb-g{flex-direction:row;flex-wrap:wrap;align-items:center}.trb-body{max-height:none}}
+/* ===== Marcador do token na iniciativa ===== */
+.ini-mark{position:absolute;pointer-events:none;border-radius:50%;z-index:6;box-shadow:0 0 0 2px rgba(226,194,119,.7),0 0 12px 3px rgba(226,194,119,.35);transition:left .15s,top .15s}
+.ini-mark.hover{box-shadow:0 0 0 2px rgba(255,255,255,.55),0 0 10px 2px rgba(255,255,255,.25)}
+.ini-mark.hover .ini-mark-arrow{display:none}
+.ini-mark-arrow{position:absolute;left:50%;top:-30px;transform:translateX(-50%);font-style:normal;font-size:22px;line-height:1;color:#e2c277;text-shadow:0 1px 3px rgba(0,0,0,.8);opacity:.85}
+.ini-mark.strong{animation:iniMarkPulse 1.3s ease-out 2}
+.ini-mark.strong .ini-mark-arrow{animation:iniMarkBob .65s ease-in-out infinite alternate;opacity:1}
+@keyframes iniMarkPulse{0%{box-shadow:0 0 0 3px rgba(226,194,119,.95),0 0 0 0 rgba(226,194,119,.7)}100%{box-shadow:0 0 0 3px rgba(226,194,119,.9),0 0 0 26px rgba(226,194,119,0)}}
+@keyframes iniMarkBob{from{transform:translate(-50%,0)}to{transform:translate(-50%,-7px)}}
+@media (prefers-reduced-motion:reduce){.ini-mark.strong,.ini-mark.strong .ini-mark-arrow{animation:none}}
+
+/* NPCs por mapa e ocultos */
+.npc-cbt{display:inline-flex;flex-wrap:wrap;align-items:center;gap:.4rem .8rem}
+.npc-cbt .npc-cena{width:auto;max-width:15rem;min-height:2rem;padding:.2rem .5rem;font-size:.85rem}
+.ini-row.hid{opacity:.55}
+.ini-row.hid .ini-txt b::after{content:" · oculto";font-weight:400;font-size:.8em;opacity:.75}
+.ini-acts{display:inline-flex;align-items:center;gap:.1rem}
+.icon-btn.ini-eye{opacity:.6}
+.icon-btn.ini-eye:hover,.icon-btn.ini-eye.on{opacity:1}
+.icon-btn.ini-eye.on{color:var(--gold)}
+.ini-else{margin:.2rem 0 0;padding:0 .2rem}
 </style></head><body><div id="app"></div><div id="ttHost" class="tt-host" hidden></div><div id="bubble" class="bubble"></div><div id="modal"></div><div id="tray" class="tray"></div><div id="spot"></div><div class="toasts" id="toasts" aria-live="polite"></div><script>
 /*!
  * Tabletop 1.0 — mapa de batalha reutilizável (cenas, mapas, grade, tokens, régua, desenho,
@@ -1515,7 +1536,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
           id: String(t.id), nome: t.nome || 'Sem nome', tipo, ownerName: t.dono || null,
           valor: (t.iniciativa!=null && !isNaN(Number(t.iniciativa))) ? Number(t.iniciativa) : null,
           foto: t.foto || null, vida: t.vida || null, defesa: t.defesa, movimento: t.movimento, corrida: t.corrida,
-          subtitulo: t.subtitulo || '', original: t
+          subtitulo: t.subtitulo || '', oculto: !!t.oculto, original: t /* Grimório: oculto vindo do app */
         };
       });
       if(ents.some(e=> e.valor!=null)) ents.sort((a,b)=> (b.valor||0) - (a.valor||0));
@@ -1780,7 +1801,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
       const ini = escapeHtml((e.nome||'?').trim().charAt(0).toUpperCase());
       const foto = e.foto ? `<span class="bm-tk-img" style="background-image:url('${String(e.foto).replace(/'/g,'%27')}')"></span>` : `<span class="bm-tk-img vazio">${ini}</span>`;
       const conds = bmConds(t);
-      return `${foto}${vida}${conds.length?`<span class="bm-tk-conds">${conds.map(c=> `<i title="${BM_CONDICOES[c][1]}">${BM_CONDICOES[c][0]}</i>`).join('')}</span>`:''}${t.luz && BM_LUZES[t.luz] ? `<span class="bm-tk-luz" title="${BM_LUZES[t.luz].nome}">${BM_LUZES[t.luz].icone}</span>` : ''}<span class="bm-tk-nome">${escapeHtml(primeiroNome(e.nome||''))}${t.oculto?' · oculto':''}</span>`;
+      return `${foto}${vida}${conds.length?`<span class="bm-tk-conds">${conds.map(c=> `<i title="${BM_CONDICOES[c][1]}">${BM_CONDICOES[c][0]}</i>`).join('')}</span>`:''}${t.luz && BM_LUZES[t.luz] ? `<span class="bm-tk-luz" title="${BM_LUZES[t.luz].nome}">${BM_LUZES[t.luz].icone}</span>` : ''}<span class="bm-tk-nome">${escapeHtml(primeiroNome(e.nome||''))}${(t.oculto || e.oculto)?' · oculto':''}</span>`;
     }
     function bmTokenTitulo(e){
       const v = bmVidaInfo(e); const mestre = bmEhMestre();
@@ -1930,7 +1951,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
       const esc = cena && cena.escuridao && cena.escuridao.ativa ? cena.escuridao : null;
       if(cena) entradas.forEach((e,i)=>{
         const t = bmTokenDe(e, i, cena);
-        if(t.oculto && !mestre) return;
+        if((t.oculto || e.oculto) && !mestre) return;
         if(bmArrasto && bmArrasto.tipo==='token' && bmArrasto.id===e.id){ vistos.add(e.id); return; }
         vistos.add(e.id);
         let el = camada.querySelector(`.bm-token[data-tk="${CSS.escape(e.id)}"]`);
@@ -1938,7 +1959,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
         const tam = t.tam || 1;
         const cs = bmConds(t);
         const noEscuro = esc && !bmPontoIluminado(esc, luzes, (t.x+tam/2)*BM_CELL, (t.y+tam/2)*BM_CELL);
-        el.className = `bm-token tipo-${e.tipo==='pj'?'pj':(e.tipo==='npc'?'npc':'avulso')} ${e.ownerName===U().nome?'meu':''} ${bmSel===e.id?'sel':''} ${t.oculto?'oculto':''} ${bmPodeMover(e)?'movel':''} ${turno.e && turno.e.id===e.id?'na-vez':''} ${cs.includes('derrotado')?'morto':''} ${cs.includes('derrubado')?'caido':''} ${t.luz && BM_LUZES[t.luz]?'com-luz luz-'+t.luz:''} ${noEscuro ? (mestre ? 'no-escuro-mestre' : (bmEhDono(e) ? 'no-escuro-meu' : 'no-escuro')) : ''}`;
+        el.className = `bm-token tipo-${e.tipo==='pj'?'pj':(e.tipo==='npc'?'npc':'avulso')} ${e.ownerName===U().nome?'meu':''} ${bmSel===e.id?'sel':''} ${(t.oculto || e.oculto)?'oculto':''} ${bmPodeMover(e)?'movel':''} ${turno.e && turno.e.id===e.id?'na-vez':''} ${cs.includes('derrotado')?'morto':''} ${cs.includes('derrubado')?'caido':''} ${t.luz && BM_LUZES[t.luz]?'com-luz luz-'+t.luz:''} ${noEscuro ? (mestre ? 'no-escuro-mestre' : (bmEhDono(e) ? 'no-escuro-meu' : 'no-escuro')) : ''}`;
         el.style.left = t.x*BM_CELL + 'px'; el.style.top = t.y*BM_CELL + 'px'; el.style.width = el.style.height = tam*BM_CELL + 'px';
         el.removeAttribute('title');
         const inner = bmTokenInner(e, t);
@@ -2021,7 +2042,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
       const out = [];
       (entradas||[]).forEach((e,i)=>{
         const t = bmTokenDe(e, i, cena); const L = t.luz && BM_LUZES[t.luz]; if(!L) return;
-        if(t.oculto && !bmEhMestre()) return;
+        if((t.oculto || e.oculto) && !bmEhMestre()) return;
         let x = t.x, y = t.y;
         if(bmArrasto && bmArrasto.tipo==='token' && bmArrasto.id===e.id && bmArrasto.nx!=null){ x = bmArrasto.nx; y = bmArrasto.ny; }
         const tam = t.tam||1;
@@ -2161,7 +2182,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
           <label>Luz</label>
           <div class="seg bm-seg bm-luz-seg">${[['','Apagada','']].concat(Object.keys(BM_LUZES).map(k=>[k,BM_LUZES[k].nome,BM_LUZES[k].icone])).map(([k,n,i])=> `<button type="button" class="seg-btn ${(t.luz||'')===k?'on':''}" data-bmluz="${k}" ${podeCond?'':'disabled'} title="${k ? `${n}: ilumina ${BM_LUZES[k].escuro} quadrados na escuridão e revela ${BM_LUZES[k].nevoa} na névoa` : 'Sem luz'}">${i} ${n}</button>`).join('')}</div>
           ${mestre ? `<label>Tamanho</label><div class="seg bm-seg">${[1,2,3,4].map(n=> `<button type="button" class="seg-btn ${(t.tam||1)===n?'on':''}" data-bmtam="${n}">${n}×${n}</button>`).join('')}</div>
-          <button type="button" class="btn btn-mini ${t.oculto?'primary':''}" data-bmoculto style="margin-top:.5rem;">${t.oculto?'🫥 Oculto dos jogadores':'👁 Visível a todos'}</button>` : ''}
+          <button type="button" class="btn btn-mini ${(t.oculto || e.oculto)?'primary':''}" data-bmoculto style="margin-top:.5rem;">${(t.oculto || e.oculto)?'🫥 Oculto dos jogadores':'👁 Visível a todos'}</button>` : ''}
           <p class="bm-dica-txt">${bmPodeMover(e) ? (OPC.aoAbrirFicha ? 'Setas do teclado movem 1 quadrado · duplo clique abre a ficha.' : 'Setas do teclado movem 1 quadrado.') : (bmEhDono(e) ? 'Aguarde sua vez na iniciativa para mover.' : 'Você não controla este token.')}</p>
           ${OPC.aoAbrirFicha && (mestre || e.ownerName===U().nome) ? `<button type="button" class="btn btn-mini" data-bmabrirficha="${escapeHtml(e.id)}">${escapeHtml(TXT.abrirFicha)}</button>` : ''}
         </div>`;
@@ -2299,7 +2320,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
         else { bmSalvarCena(cid, {grade:g}); bmRender(); }
       }));
       q('[data-bmtam]').forEach(b=> b.onclick = ()=> bmSalvarToken(bmSel, {tam: parseInt(b.dataset.bmtam,10)}));
-      q('[data-bmoculto]').forEach(b=> b.onclick = ()=>{ const ents = bmEntradas(); const e = ents.find(x=> x.id===bmSel); const t = e ? bmTokenDe(e, ents.indexOf(e), cena) : {}; bmSalvarToken(bmSel, {oculto: !t.oculto}); });
+      q('[data-bmoculto]').forEach(b=> b.onclick = ()=>{ const ents = bmEntradas(); const e = ents.find(x=> x.id===bmSel); const t = e ? bmTokenDe(e, ents.indexOf(e), cena) : {}; bmSalvarToken(bmSel, {oculto: !(t.oculto || (e && e.oculto))}); });
       q('[data-bmcond]').forEach(b=> b.onclick = ()=>{ const ents = bmEntradas(); const e = ents.find(x=> x.id===bmSel); if(!e) return; const t = bmTokenDe(e, ents.indexOf(e), cena); const c = bmConds(t); const k = b.dataset.bmcond; const j = c.indexOf(k); if(j>=0) c.splice(j,1); else c.push(k); bmSalvarToken(bmSel, {cond:c}); });
       q('[data-bmgavetax]').forEach(b=> b.onclick = ()=>{ bmSel = null; bmGaveta = null; bmRender(); });
       q('[data-bmabrirficha]').forEach(b=> b.onclick = ()=> bmAbrirFicha(b.dataset.bmabrirficha));
@@ -2552,6 +2573,8 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
       /* condições de um token (lista de chaves), ex.: mesa.definirCondicoes('a1', ['derrubado']) */
       condicoes(id){ const ents = bmEntradas(); const e = ents.find(x=> x.id===String(id)); return e ? bmConds(bmTokenDe(e, ents.indexOf(e), bmCena())) : []; },
       definirCondicoes(id, lista){ bmSalvarToken(String(id), {cond: (lista||[]).slice()}); },
+      /* Grimório: esconde ou mostra um token dos jogadores na cena ativa, ex.: mesa.definirOculto('a1', true) */
+      definirOculto(id, sim){ bmSalvarToken(String(id), {oculto: !!sim}); },
       /* troca a aparência na hora: mesa.definirTema({destaque:'#4fd1ff', 'destaque-rgb':'79,209,255'}) */
       definirTema(t){ OPC.tema = Object.assign({}, OPC.tema||{}, t||{}); if(bmNode) aplicarTema(bmNode); if(avisoEl) aplicarTema(avisoEl); },
       elemento(){ return bmNode; },
@@ -3217,6 +3240,8 @@ const IC = {
   back:'<svg viewBox="0 0 24 24" class="i"><path d="M15 5 8 12l7 7"/></svg>',
   x:'<svg viewBox="0 0 24 24" class="i"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   min:'<svg viewBox="0 0 24 24" class="i"><path d="M6 12h12"/></svg>',
+  eye:'<svg viewBox="0 0 24 24" class="i"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  eyeOff:'<svg viewBox="0 0 24 24" class="i"><path d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
   copy:'<svg viewBox="0 0 24 24" class="i"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></svg>',
   img:'<svg viewBox="0 0 24 24" class="i"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg>',
   plus:'<svg viewBox="0 0 24 24" class="i"><path d="M12 5v14M5 12h14"/></svg>',
@@ -3239,7 +3264,7 @@ function cleanRoll(r){
 }
 const SHEET_NUM=['initRoll','xp','level','pendingLv','hpMax','hpCur','hpTemp','ac','initMisc','hdUsed','pb','atk'];
 function cleanSheet(s){
-  SHEET_NUM.forEach(k=>{ if(s[k]!==undefined&&s[k]!==null&&k!=='atk') s[k]=num(s[k]); }); s.onMap=!!s.onMap; s.offCombat=!!s.offCombat;
+  SHEET_NUM.forEach(k=>{ if(s[k]!==undefined&&s[k]!==null&&k!=='atk') s[k]=num(s[k]); }); s.onMap=!!s.onMap; s.offCombat=!!s.offCombat; s.cena=typeof s.cena==='string'&&s.cena?s.cena.slice(0,100):null; s.hidden=!!s.hidden;
   if(s.conds!==undefined) s.conds=Array.isArray(s.conds)?[...new Set(s.conds.filter(k=>typeof k==='string'&&TT_CONDS_OK.has(k)))].slice(0,20):[];
   if(s.ab) Object.keys(s.ab).forEach(k=>s.ab[k]=num(s.ab[k]));
   if(s.coins) Object.keys(s.coins).forEach(k=>s.coins[k]=num(s.coins[k]));
@@ -4139,7 +4164,7 @@ function gmPlayers(){
 function gmNPCs(){
   const n=S.sheets.filter(s=>s.kind==='npc');
   return `<section class="panel"><div class="row" style="margin-bottom:.8rem"><h2 class="grow" style="margin:0">Fichas dos NPCs</h2><button class="btn" data-act="monPicker">${IC.book} Adicionar do livro</button><button class="btn primary" data-act="newNPC">${IC.plus} Criar NPC</button></div>
-    ${n.length?`<div class="list">${n.map(sh=>`<div class="li">${sh.portrait?`<img class="npc-thumb" src="${sh.portrait}" alt="">`:''}<div class="grow"><button class="nm" data-act="openSheet" data-id="${sh.id}">${h(sh.name||'NPC sem nome')}</button><div class="sub">${sh.onMap?'<span class="pill gold">no combate</span> ':''}${h(sh.meta||'')}${sh.cr?' · ND '+h(sh.cr):''} · CA ${sh.ac} · PV ${sh.hpCur}/${sh.hpMax}</div></div>
+    ${n.length?`<div class="list">${n.map(sh=>`<div class="li">${sh.portrait?`<img class="npc-thumb" src="${sh.portrait}" alt="">`:''}<div class="grow"><button class="nm" data-act="openSheet" data-id="${sh.id}">${h(sh.name||'NPC sem nome')}</button><div class="sub">${npcPill(sh)}${h(sh.meta||'')}${sh.cr?' · ND '+h(sh.cr):''} · CA ${sh.ac} · PV ${sh.hpCur}/${sh.hpMax}</div></div>
       <button class="btn sm" data-act="openSheet" data-id="${sh.id}">Abrir</button><button class="btn sm ghost" data-act="dupNPC" data-id="${sh.id}">Duplicar</button><button class="icon-btn" data-act="delSheet" data-id="${sh.id}" aria-label="Excluir NPC">${IC.trash}</button></div>`).join('')}</div>`
       :`<div class="empty"><h3>Nenhum NPC ainda</h3><p>Crie aliados, vilões e monstros com um bloco de estatísticas enxuto, ou traga goblins, orcs, dragões e companhia direto do livro.</p><button class="btn" data-act="monPicker">${IC.book} Adicionar do livro</button></div>`}</section>`;
 }
@@ -4222,7 +4247,7 @@ function viewSheet(sh){
     ${sh.kind==='pc'?`<div class="advbar" role="group" aria-label="Rolagens de d20">${[['normal','Normal'],['adv','Vantagem'],['dis','Desvantagem']].map(([k,l])=>`<button data-act="adv" data-v="${k}" aria-pressed="${S.adv===k}">${l}</button>`).join('')}</div>`:''}
     ${isGM()&&sh.kind==='pc'?`<label class="small muted" for="shown">Jogador</label><select class="inp" style="width:auto" id="shown" data-act-change="assign" data-id="${sh.id}"><option value="">Sem jogador</option>${memberOptions().map(([id,n])=>`<option value="${id}" ${sh.ownerId===id?'selected':''}>${h(n)}</option>`).join('')}</select>`:''}
     ${canEdit(sh)?`<button class="btn danger sm" data-act="delSheet" data-id="${sh.id}">${IC.trash} Excluir ficha</button>`:''}
-    ${isGM()?`<label class="check"><input type="checkbox" data-act-change="ttNpcToggle" data-id="${sh.id}" ${inCombat(sh)?'checked':''}> No combate (iniciativa e mapa)</label>`:''}
+    ${isGM()?(sh.kind==='npc'?npcCombatHTML(sh):`<label class="check"><input type="checkbox" data-act-change="ttNpcToggle" data-id="${sh.id}" ${inCombat(sh)?'checked':''}> No combate (iniciativa e mapa)</label>`):''}
     ${isGM()&&sh.kind==='npc'?`<label class="check"><input type="checkbox" data-s="rq.secret" data-k="npcsecret" ${S.rq.secret?'checked':''}> Rolagens secretas</label>`:''}</div>`;
   return sheetLayout(sh,`<main class="sheet-wrap">${top}<article class="sheet">${sh.kind==='npc'?npcBody(sh):pcBody(sh)}</article></main>`);
 }
@@ -4804,7 +4829,7 @@ const A = {
     applyLineage(s,m.lk,p.needsSkills?m.picks:[]); saveNow(s); closeModal(); render();
     toast(`${p.L.n} aplicada.${p.sp.ac?' Revise a CA: a armadura natural de '+p.sp.n+' não vale mais.':''}`); },
   ttNpcOff(el){ const s=sh_(el); if(!s||!isGM()) return; if(s.kind==='pc') s.offCombat=true; else s.onMap=false; s.initRoll=null; toast(`${s.name||'Personagem'} saiu do combate.`); if(S.cbSel===s.id) S.cbSel=null; saveNow(s); render(); },
-  async ttNpcInit(){ if(!isGM()) return; const list=S.sheets.filter(s=>s.kind==='npc'&&s.onMap); const res=[];
+  async ttNpcInit(){ if(!isGM()) return; const list=S.sheets.filter(npcHere); const res=[];
     list.forEach(s=>{ const r=rollExpr(withMod('1d20',mod(num(s.ab.des)||10)+num(s.initMisc))); s.initRoll=r.total; saveNow(s); res.push(`${s.name||'NPC'} ${r.total}`); });
     toast('Iniciativa dos NPCs: '+res.join(', ')+'.'); render(); },
   ttClearInit(){ if(!isGM()) return; confirmBox('Limpar iniciativas?','A iniciativa de todos os personagens e NPCs desta campanha volta a ficar em branco.','Limpar',()=>{ S.sheets.forEach(s=>{ if(s.initRoll!=null){ s.initRoll=null; saveNow(s); } }); toast('Iniciativas limpas.'); render(); },false); },
@@ -4929,7 +4954,7 @@ const A = {
   async wCreate(){ const pc=buildPC(); const btn=$('[data-act="wCreate"]'); if(btn) btn.disabled=true; try{ const sid=await saveNewSheet(pc); closeModal(); S.openSheet=sid; S.sheetTab='principal'; toast(`${pc.name} entrou na campanha.`); render(); window.scrollTo(0,0); }catch(e){ toast('Não foi possível criar a ficha. Tente de novo.','err'); if(btn) btn.disabled=false; } }
 };
 const CH = {
-  ttNpcOn(el){ const s=sheetById(el.value); if(!s||!isGM()) return; if(s.kind==='pc') s.offCombat=false; else s.onMap=true; saveNow(s); toast(`${s.name||'NPC'} entrou no combate e no mapa.`); render(); },
+  ttNpcOn(el){ const s=sheetById(el.value); if(!s||!isGM()) return; if(s.kind==='pc') s.offCombat=false; else { s.onMap=true; s.cena=TT_ST.cena||null; } saveNow(s); toast(`${s.name||'NPC'} entrou no combate${s.kind==='npc'&&s.cena?' neste mapa':''}.`); render(); },
   ttNpcToggle(el){ const s=sheetById(el.dataset.id); if(!s||!isGM()) return; if(s.kind==='pc') s.offCombat=!el.checked; else s.onMap=el.checked; if(!el.checked) s.initRoll=null; saveNow(s); render(); },
   lineage(el){ const s=sheetById(el.dataset.id); const v=el.value; if(!s) return;
     if(!v){ if(!s.lineage) return; const n=LINEAGES[s.lineage].n; confirmBox('Remover linhagem?',`Os traços de ${n} saem da ficha, e os de ${SPECIES[s.species].n} voltam, com o deslocamento e as perícias de antes.`,'Remover linhagem',()=>{ revertLineage(s); saveNow(s); toast(`Linhagem ${n} removida.`); render(); },false); render(); return; }
@@ -5095,7 +5120,7 @@ function ttWrapArm(arm){
     return {
       doc(id){ const r=id?c.doc(id):c.doc(); return {id:r.id, set:(a,b)=>{ if(n==='battlemapTokens') try{ ttTokenWrite(r.id,a); }catch(e){} return r.set(a,b); }, delete:()=>r.delete(), get:()=>r.get().then(s=>wrapDoc(n,s)),
         onSnapshot:cb=>r.onSnapshot(s=>{ const w=wrapDoc(n,s);
-          if(n==='battlemap'&&r.id==='config'){ try{ const d=w&&w.data&&w.data(); TT_ST.cena=(d&&d.cenaAtiva)||null; TT_ST.cfg=d||null; ttMapChanged(); }catch(e){} }
+          if(n==='battlemap'&&r.id==='config'){ try{ const d=w&&w.data&&w.data(); const pc_=TT_ST.cena; TT_ST.cena=(d&&d.cenaAtiva)||null; TT_ST.cfg=d||null; if(pc_!==TT_ST.cena&&ttMesa){ try{ ttMesa.atualizar(); }catch(e){} } ttMapChanged(); }catch(e){} }
           cb(w); },e=>dbError('mapa '+n,e))}; },
       onSnapshot:cb=>c.onSnapshot(s=>{ const rows=[]; s.forEach(d=>{ rows.push([d.id,ttClean(n,d.data())]); });
           if(n==='battlemapTokens'){ const o={}; rows.forEach(([id,v])=>o[id]=v); TT_ST.toks=o; TT_ST.ready=true; ttMapChanged(); }
@@ -5111,13 +5136,14 @@ function ttUserName(uid){
 }
 function ttSpeed(sp){ const m=String(sp||'').match(/(\d+(?:[.,]\d+)?)/); return m?Number(m[1].replace(',','.')):null; }
 function ttTokens(){
-  const out=S.sheets.filter(s=>(s.kind==='pc'&&!s.offCombat)||(s.kind==='npc'&&s.onMap)).map(s=>{
+  const out=S.sheets.filter(s=>(s.kind==='pc'&&!s.offCombat)||npcHere(s)).map(s=>{
     const pc=s.kind==='pc'; const c=CLASSES[s.cls], sp=SPECIES[s.species];
     const sub=pc?[s.lineage&&LINEAGES[s.lineage]?LINEAGES[s.lineage].n:(sp&&sp.n),c&&(c.n+' '+shLevel(s))].filter(Boolean).join(' · '):(s.meta||'');
     const temp=num(s.hpTemp);
-    return {id:s.id, nome:s.name||(pc?'Personagem sem nome':'NPC sem nome'), tipo:pc?'pj':'npc', dono:pc&&s.ownerId?ttUserName(s.ownerId):null,
+    const hid=!pc&&!!s.hidden&&!isGM();
+    return {id:s.id, oculto:!pc&&!!s.hidden, nome:hid?'Alguém':(s.name||(pc?'Personagem sem nome':'NPC sem nome')), tipo:pc?'pj':'npc', dono:pc&&s.ownerId?ttUserName(s.ownerId):null,
       iniciativa:s.initRoll==null?null:num(s.initRoll), vida:(()=>{ const mx=Math.max(1,num(s.hpMax)||1); return {atual:Math.max(0,Math.min(mx,num(s.hpCur))),max:mx}; })(), defesa:num(s.ac)||10,
-      movimento:ttSpeed(s.speed), foto:s.portrait?safeImg(s.portrait)||null:null, subtitulo:sub+(temp?` · +${temp} PV temp.`:''), _dex:mod(num((s.ab||{}).des)||10)};
+      movimento:ttSpeed(s.speed), foto:!hid&&s.portrait?safeImg(s.portrait)||null:null, subtitulo:hid?'':sub+(temp?` · +${temp} PV temp.`:''), _dex:mod(num((s.ab||{}).des)||10)};
   });
   // desempate: maior Destreza primeiro (o mapa preserva a ordem nos empates)
   out.sort((a,b)=>((b.iniciativa??-999)-(a.iniciativa??-999))||(b._dex-a._dex));
@@ -5158,6 +5184,7 @@ function ttRefresh(){
 let ttLastTurn=null;
 function ttTurnChanged({turno,rodada,livre}){
   const key=[turno,rodada,livre].join('|'); const first=ttLastTurn===null; ttLastTurn=key; setTimeout(safeRender,0);
+  if(!first&&turno&&!livre&&isGM()) setTimeout(()=>mkFlash(turno),80);
   if(first||!turno||livre) return;
   const sh=sheetById(turno); if(!sh) return;
   const mine=sh.ownerId===S.me.id||(!sh.ownerId&&isGM());
@@ -5176,7 +5203,7 @@ function viewDeathTurn(){
 /* ---- barra acima do mapa ---- */
 function ttBar(){
   const gm=isGM(); const mine=S.sheets.filter(s=>s.kind==='pc'&&s.ownerId===S.me.id);
-  const npcsOn=S.sheets.filter(s=>s.kind==='npc'&&s.onMap), npcsOff=S.sheets.filter(s=>s.kind==='npc'&&!s.onMap);
+  const npcsOn=S.sheets.filter(npcHere), npcsOff=S.sheets.filter(s=>s.kind==='npc'&&!npcHere(s));
   const ini=s=>s.initRoll==null?'—':s.initRoll;
   return `<section class="tt-bar">
     ${mine.length?`<div class="tt-bar-g"><span class="lab">Iniciativa</span>${mine.map(s=>`<button class="btn sm" data-act="rollInit" data-id="${s.id}" title="Rolar iniciativa de ${h(s.name||'personagem')}">${IC.d20} ${h(s.name||'Personagem')} <b class="tt-ini">${ini(s)}</b></button>`).join('')}</div>`:''}
@@ -5363,7 +5390,7 @@ function viewMonPicker(){
       <select class="inp" data-mk="cr" data-k="mk.cr" aria-label="Nível de desafio">${MON_CR.map(([k,l])=>`<option value="${k}" ${(f.cr||'')===k?'selected':''}>${l}</option>`).join('')}</select></div>
     <div class="row mon-opts"><label class="small">Quantidade <input class="inp num" type="number" min="1" max="20" data-mk="qty" data-k="mk.qty" value="${f.qty||1}" aria-label="Quantidade" style="width:4.2rem;display:inline-block;padding:.25rem .4rem"></label>
       <label class="check small"><input type="checkbox" data-act-change="mkRoll" ${f.rollHp?'checked':''}> Rolar os PV de cada um</label>
-      <label class="check small"><input type="checkbox" data-act-change="mkJoin" ${f.join?'checked':''}> Entrar no combate</label>
+      <label class="check small"><input type="checkbox" data-act-change="mkJoin" ${f.join?'checked':''}> Entrar no combate (neste mapa)</label><label class="check small"><input type="checkbox" data-act-change="mkHide" ${f.hide?'checked':''}> Ocultos dos jogadores</label>
       <span class="grow"></span><label class="small">Ordem <select class="inp" data-mk="sort" data-k="mk.sort" aria-label="Ordenar" style="width:auto;display:inline-block;padding:.25rem .4rem"><option value="">Nome</option><option value="cr" ${f.sort==='cr'?'selected':''}>Nível de desafio</option></select></label></div>
     <p class="small muted" style="margin:.4rem 0">${all.length} monstro${all.length===1?'':'s'}${all.length>list.length?` · mostrando ${list.length}`:''}</p>
     <div class="sp-list" data-scroll="mklist">${list.map(m=>{ const open=f.open===m.id, n=inCamp(m.n);
@@ -5381,7 +5408,7 @@ Object.assign(A,{
   mkMore(){ S.mk.limit=(S.mk.limit||80)+120; preserve(renderModal); },
   async mkAdd(el){ if(!isGM()||!MONSTERS) return; const m=MONSTERS.find(x=>x.id===+el.dataset.v); if(!m) return;
     const qty=Math.max(1,Math.min(20,Math.floor(+S.mk.qty||1))); const names=monNames(m.n,qty); el.disabled=true;
-    try{ let t=Date.now(); for(const nm of names){ const d=monToNPC(m,nm,S.mk.rollHp); d.createdAt=t++; if(S.mk.join) d.onMap=true; await saveNewSheet(d); } }
+    try{ let t=Date.now(); for(const nm of names){ const d=monToNPC(m,nm,S.mk.rollHp); d.createdAt=t++; if(S.mk.join){ d.onMap=true; d.cena=TT_ST.cena||null; if(S.mk.hide) d.hidden=true; } await saveNewSheet(d); } }
     catch(e){ toast('Não foi possível criar o NPC.','err'); el.disabled=false; return; }
     toast((qty>1?`${qty} × ${m.n} adicionados`:`${m.n} adicionado`)+(S.mk.join?' ao combate.':' aos NPCs.')); preserve(renderModal); render(); }
 });
@@ -5447,8 +5474,8 @@ function ttMapChanged(){ clearTimeout(ttMapTimer); ttMapTimer=setTimeout(()=>{
   if(sig!==TT_ST.sig){ TT_ST.sig=sig; safeRender(); }
 },0); }
 const ttKey = sid=> TT_ST.cena+'__'+sid;
-const ttHidden = sid=>{ const t=TT_ST.cena&&TT_ST.toks[ttKey(sid)]; return !!(t&&t.oculto); };
-const inCombat = s=> (s.kind==='pc'&&!s.offCombat)||(s.kind==='npc'&&s.onMap);
+const ttHidden = sid=>{ const s=sheetById(sid); if(s&&s.kind==='npc'&&s.hidden) return true; const t=TT_ST.cena&&TT_ST.toks[ttKey(sid)]; return !!(t&&t.oculto); };
+const inCombat = s=> (s.kind==='pc'&&!s.offCombat)||npcHere(s);
 /* Quem grava a ficha por conta própria: o dono (PJ com jogador) ou o mestre (NPC e PJ sem jogador),
    ou o aparelho que acabou de mexer nela. Assim um aparelho com a ficha desatualizada nunca sobrescreve PV etc. */
 const ttCtrl = s=> s.ownerId?s.ownerId===S.me.id:isGM();
@@ -5460,6 +5487,7 @@ let ttSyncing=false, ttPushing=false;
 const ttSave = s=>{ ttSyncing=true; try{ saveNow(s); } finally{ ttSyncing=false; } };
 // o usuário marcou/desmarcou uma condição no painel do token, neste aparelho: vai para a ficha
 function ttTokenWrite(id,d){
+  try{ ttHideWrite(id,d); }catch(e){}
   if(ttPushing||!d||!Array.isArray(d.cond)) return;
   const sid=String(id).split('__')[1], s=sid&&sheetById(sid); if(!s||!canEdit(s)) return;
   const mc=d.cond.filter(x=>COND_BY[x]); if(sameSet(condsOf(s),mc)) return;
@@ -5496,7 +5524,7 @@ function cbtCombatants(){
 }
 const canOpenCbt = s=> !!s&&(isGM()||(s.kind==='pc'&&s.ownerId===S.me.id));
 function cbtTurn(){ try{ return ttMesa?ttMesa.turno():{turno:null,rodada:1,livre:false}; }catch(e){ return {turno:null,rodada:1,livre:false}; } }
-function iniActive(){ const t=cbtTurn(); return !!t.turno||S.sheets.some(s=>(s.kind==='npc'&&s.onMap)||(inCombat(s)&&s.initRoll!=null)); }
+function iniActive(){ const t=cbtTurn(); return !!t.turno||S.sheets.some(s=>npcHere(s)||(inCombat(s)&&s.initRoll!=null)); }
 function cbtSub(s){
   if(s.kind==='npc') return s.meta||'NPC';
   const c=CLASSES[s.cls]; return [c&&(c.n+' '+shLevel(s)),s.ownerId&&S.camp&&S.camp.names?S.camp.names[s.ownerId]:''].filter(Boolean).join(' · ');
@@ -5514,14 +5542,14 @@ function iniPanel(ctx){
     const av=s.portrait?`<img src="${s.portrait}" alt="">`:`<span>${h((s.name||'?').trim().charAt(0).toUpperCase())}</span>`;
     const inner=`<span class="ini-av ${s.kind}">${av}</span><span class="ini-txt"><b>${h(s.name||'Sem nome')}</b><small>${h(cbtSub(s))}</small>
       ${seeHp?`<span class="ini-hp ${pct<=25?'low':pct<=50?'mid':''}"><i style="width:${pct}%"></i></span><small class="ini-hpn">PV ${num(s.hpCur)}/${num(s.hpMax)}${gm||s.ownerId===S.me.id?` · CA ${num(s.ac)||10}`:''}</small>`:''}</span>`;
-    return `<div class="ini-row ${s.id===cur?'turn':''} ${s.id===sel?'sel':''} ${num(s.hpCur)<=0&&num(s.hpMax)>0?'down':''} ${s.kind}">
+    return `<div class="ini-row ${gm&&s.kind==='npc'&&ttHidden(s.id)?'hid':''} ${s.id===cur?'turn':''} ${s.id===sel?'sel':''} ${num(s.hpCur)<=0&&num(s.hpMax)>0?'down':''} ${s.kind}">
       <div class="ini-val">${gm?`<input class="ini-in" type="number" inputmode="numeric" value="${ini??''}" placeholder="—" data-act-change="iniSet" data-id="${s.id}" aria-label="Iniciativa de ${h(s.name||'')}">`:`<b>${ini??'—'}</b>`}
         ${ed?`<button class="ini-roll" data-act="rollInit" data-id="${s.id}" title="Rolar iniciativa" aria-label="Rolar iniciativa de ${h(s.name||'')}">${IC.d20}</button>`:''}</div>
       ${open?`<button class="ini-open" data-act="iniOpen" data-ctx="${ctx}" data-id="${s.id}" title="${ctx==='map'?'Abrir a ficha de combate':'Abrir a ficha'}">${inner}</button>`:`<div class="ini-open off">${inner}</div>`}
       <span class="ini-conds">${condIcons(s)}</span>
-      ${gm?`<button class="icon-btn ini-x" data-act="ttNpcOff" data-id="${s.id}" title="Tirar do combate" aria-label="Tirar ${h(s.name||(s.kind==='pc'?'personagem':'NPC'))} do combate">${IC.x}</button>`:''}
+      ${gm?`<span class="ini-acts">${s.kind==='npc'?`<button class="icon-btn ini-eye ${ttHidden(s.id)?'on':''}" data-act="iniHide" data-id="${s.id}" aria-pressed="${ttHidden(s.id)}" title="${ttHidden(s.id)?'Oculto dos jogadores: clique para mostrar':'Visível: clique para ocultar dos jogadores'}" aria-label="${ttHidden(s.id)?'Mostrar':'Ocultar'} ${h(s.name||'NPC')} para os jogadores">${ttHidden(s.id)?IC.eyeOff:IC.eye}</button>`:''}<button class="icon-btn ini-x" data-act="ttNpcOff" data-id="${s.id}" title="Tirar do combate" aria-label="Tirar ${h(s.name||(s.kind==='pc'?'personagem':'NPC'))} do combate">${IC.x}</button></span>`:''}
     </div>`; }).join('');
-  const off=S.sheets.filter(s=>s.kind==='npc'&&!s.onMap), offPc=S.sheets.filter(s=>s.kind==='pc'&&s.offCombat);
+  const off=S.sheets.filter(s=>s.kind==='npc'&&!npcHere(s)), offPc=S.sheets.filter(s=>s.kind==='pc'&&s.offCombat);
   return `<section class="ini-panel ${fold?'fold':''}">
     <div class="ini-head"><h3>${IC.d20} Iniciativa</h3><span class="grow"></span>${ctx==='sheet'?`<button class="icon-btn" data-act="iniFold" aria-expanded="${!fold}" title="${fold?'Mostrar':'Recolher'}">${IC.chev}</button>`:''}</div>
     ${fold?'':`${status}
@@ -5529,8 +5557,8 @@ function iniPanel(ctx){
       :myTurn?`<div class="ini-turn"><button class="btn sm primary" data-act="cbTurn" data-v="prox">Passar a vez ▶</button></div>`:''}
     <div class="ini-list">${rows||'<p class="small muted" style="padding:.6rem">Ninguém no combate ainda.</p>'}</div>
     ${gm?`<div class="ini-gm">
-      <div class="row" style="gap:.4rem"><select class="inp ini-add" data-act-change="ttNpcOn" aria-label="Adicionar ao combate"><option value="">+ Adicionar ao combate…</option>${offPc.length?`<optgroup label="Personagens">${offPc.map(s=>`<option value="${s.id}">${h(s.name||'Personagem sem nome')}</option>`).join('')}</optgroup>`:''}${off.length?`<optgroup label="NPCs">${off.map(s=>`<option value="${s.id}">${h(s.name||'NPC sem nome')}</option>`).join('')}</optgroup>`:''}</select><button class="btn sm" data-act="monPicker" data-join="1" title="Trazer monstros do livro direto para o combate">${IC.book} Do livro</button></div>
-      <div class="row" style="gap:.4rem"><button class="btn sm" data-act="ttNpcInit" ${S.sheets.some(s=>s.kind==='npc'&&s.onMap)?'':'disabled'}>${IC.d20} Rolar NPCs</button><button class="btn sm ghost" data-act="ttClearInit">Limpar</button></div></div>`
+      <div class="row" style="gap:.4rem"><select class="inp ini-add" data-act-change="ttNpcOn" aria-label="Adicionar ao combate"><option value="">+ Adicionar ao combate…</option>${offPc.length?`<optgroup label="Personagens">${offPc.map(s=>`<option value="${s.id}">${h(s.name||'Personagem sem nome')}</option>`).join('')}</optgroup>`:''}${off.length?`<optgroup label="NPCs">${off.map(s=>`<option value="${s.id}">${h(s.name||'NPC sem nome')}${s.onMap&&s.cena?` (em ${h(cenaNome(s.cena))})`:''}</option>`).join('')}</optgroup>`:''}</select><button class="btn sm" data-act="monPicker" data-join="1" title="Trazer monstros do livro direto para o combate">${IC.book} Do livro</button></div>
+      <div class="row" style="gap:.4rem"><button class="btn sm" data-act="ttNpcInit" ${S.sheets.some(npcHere)?'':'disabled'}>${IC.d20} Rolar NPCs</button><button class="btn sm ghost" data-act="ttClearInit">Limpar</button></div>${npcElsewhereHTML()}</div>`
       :S.sheets.some(s=>s.kind==='pc'&&!s.offCombat&&s.ownerId===S.me.id&&s.initRoll==null)?`<p class="small muted ini-hint">Role a sua iniciativa no dado ao lado do seu nome.</p>`:''}`}
   </section>`;
 }
@@ -5656,7 +5684,7 @@ function sheetLayout(sh,inner){
 
 Object.assign(A,{
   condDel(el){ const s=sh_(el); if(!s||!canEdit(s)) return; s.conds=condsOf(s).filter(k=>k!==el.dataset.v); saveNow(s); showCondTip(null); render(); ttCondToMap(s.id); },
-  iniOpen(el){ const s=sh_(el); if(!canOpenCbt(s)) return; WQ.flushAll();
+  iniOpen(el){ const s=sh_(el); if(!canOpenCbt(s)) return; WQ.flushAll(); if(el.dataset.ctx!=='sheet') setTimeout(()=>mkFlash(s.id),40);
     if(el.dataset.ctx==='sheet'){ S.openSheet=s.id; S.sheetTab='principal'; render(); window.scrollTo(0,0); return; }
     S.cbSel=s.id; S.cbMin=false; render(); setTimeout(()=>{ const p=$('.cbt-sheet'); if(p&&p.getBoundingClientRect().top<0) p.scrollIntoView({block:'start',behavior:'smooth'}); },30); },
   iniFold(){ S.iniFold=!S.iniFold; render(); },
@@ -6259,6 +6287,87 @@ Object.assign(A,{
   trbUse(){ const [k,a]=(S.modal.key||'hoard:0').split(':'); trState().nodes.push(trNew(k,a)); closeModal(); toast('Tabela adicionada às rolagens.'); render(); }
 });
 document.addEventListener('input',e=>{ const el=e.target; if(el.dataset&&el.dataset.trb&&S.modal&&S.modal.type==='trBrowse'){ S.modal.q=el.value; preserve(renderModal); } });
+
+/* ===== Marcador no mapa: qual token é o de quem foi clicado na iniciativa (ou de quem é a vez) ===== */
+const MK={sel:null,hover:null,pulse:0,pulseId:null,timer:0};
+function mkPlace(kind,sid,strong){
+  const mundo=$('#ttHost .bm-mundo'); let el=mundo&&mundo.querySelector(`.ini-mark[data-k="${kind}"]`);
+  const tk=sid&&mundo&&mundo.querySelector(`.bm-token[data-tk="${CSS.escape(sid)}"]`);
+  if(!tk){ if(el) el.remove(); return; }
+  if(!el){ el=document.createElement('div'); el.className='ini-mark'; el.dataset.k=kind; el.innerHTML='<i class="ini-mark-arrow">▼</i>'; mundo.appendChild(el); }
+  const x=parseFloat(tk.style.left)||0, y=parseFloat(tk.style.top)||0, w=parseFloat(tk.style.width)||70;
+  el.style.left=x+'px'; el.style.top=y+'px'; el.style.width=el.style.height=w+'px';
+  el.classList.toggle('hover',kind==='hover'); el.classList.toggle('strong',!!strong);
+}
+function mkTick(){
+  const on=document.body.classList.contains('map-mode');
+  const sel=on?(MK.sel&&inCombat(sheetById(MK.sel)||{})?MK.sel:null):null;
+  const strong=Date.now()<MK.pulse;
+  mkPlace('sel',sel,strong&&MK.pulseId===sel);
+  mkPlace('hover',on&&MK.hover&&MK.hover!==sel?MK.hover:null,false);
+  if(!sel&&!MK.hover){ clearInterval(MK.timer); MK.timer=0; }
+}
+function mkStart(){ if(!MK.timer) MK.timer=setInterval(mkTick,150); mkTick(); }
+// destaca um token por alguns segundos (e deixa um anel discreto enquanto estiver selecionado)
+function mkFlash(sid){ MK.sel=sid; MK.pulse=Date.now()+2600; MK.pulseId=sid; mkStart(); }
+document.addEventListener('mouseover',e=>{ const row=e.target.closest&&e.target.closest('.cbt-side .ini-row'); const b=row&&row.querySelector('[data-id]');
+  const id=b?b.dataset.id:null; if(id!==MK.hover){ MK.hover=id; mkStart(); } });
+
+/* ===== NPCs por mapa e NPCs ocultos =====
+   sh.cena: id da cena (mapa) em que o NPC luta; null = aparece em qualquer mapa (comportamento antigo).
+   sh.hidden: o NPC fica oculto dos jogadores (some do mapa e da iniciativa deles). */
+const npcHere = s=> !!s&&s.kind==='npc'&&!!s.onMap&&(!s.cena||s.cena===TT_ST.cena);
+function ttScenes(){
+  const c=(TT_ST.cfg&&TT_ST.cfg.cenas)||{};
+  return Object.keys(c).sort((a,b)=>(num(c[a]&&c[a].criadaEm))-(num(c[b]&&c[b].criadaEm))).map(id=>({id,nome:String((c[id]&&c[id].nome)||'Mapa')}));
+}
+function cenaNome(id){ const c=(TT_ST.cfg&&TT_ST.cfg.cenas)||{}; return id&&c[id]?String(c[id].nome||'Mapa'):'mapa removido'; }
+function npcPill(sh){
+  if(!sh.onMap) return sh.hidden?'<span class="pill">oculto</span> ':'';
+  const where=sh.cena?(sh.cena===TT_ST.cena?'no combate':'em '+h(cenaNome(sh.cena))):'no combate';
+  return `<span class="pill gold">${where}</span> ${sh.hidden?'<span class="pill">oculto</span> ':''}`;
+}
+// controles na ficha do NPC (mestre): no combate, em qual mapa, oculto
+function npcCombatHTML(sh){
+  const sc=ttScenes();
+  return `<span class="npc-cbt">
+    <label class="check"><input type="checkbox" data-act-change="ttNpcToggle" data-id="${sh.id}" ${sh.onMap?'checked':''}> No combate</label>
+    <select class="inp npc-cena" data-act-change="npcCena" data-id="${sh.id}" aria-label="Mapa do encontro" title="Em qual mapa este NPC luta">
+      <option value="" ${sh.cena?'':'selected'}>Em qualquer mapa</option>
+      ${sc.map(c=>`<option value="${h(c.id)}" ${sh.cena===c.id?'selected':''}>Só em: ${h(c.nome)}${c.id===TT_ST.cena?' (atual)':''}</option>`).join('')}
+      ${sh.cena&&!sc.some(c=>c.id===sh.cena)?`<option value="${h(sh.cena)}" selected>Mapa removido</option>`:''}
+    </select>
+    <label class="check"><input type="checkbox" data-act-change="npcHide" data-id="${sh.id}" ${sh.hidden?'checked':''}> Oculto dos jogadores</label></span>`;
+}
+// NPCs preparados para outros mapas (resumo para o mestre, no painel de iniciativa)
+function npcElsewhereHTML(){
+  const by={}; S.sheets.forEach(s=>{ if(s.kind==='npc'&&s.onMap&&s.cena&&s.cena!==TT_ST.cena) by[s.cena]=(by[s.cena]||0)+1; });
+  const ks=Object.keys(by); if(!ks.length) return '';
+  return `<p class="small muted ini-else" title="Esses NPCs entram na iniciativa e no mapa quando o mapa deles for o ativo">Esperando em outros mapas: ${ks.map(k=>`${h(cenaNome(k))} (${by[k]})`).join(', ')}</p>`;
+}
+// o mestre usou o botão "oculto" no painel do token: a ficha acompanha
+function ttHideWrite(id,d){
+  if(!d||!('oculto' in d)||!isGM()) return;
+  const sid=String(id).split('__')[1], s=sid&&sheetById(sid); if(!s||s.kind!=='npc') return;
+  if(!!d.oculto===!!s.hidden) return;
+  s.hidden=!!d.oculto; saveNow(s); setTimeout(safeRender,0);
+}
+function npcSetHidden(s,v){
+  s.hidden=!!v;
+  // tokens escondidos antes pelo painel do mapa: ao mostrar, limpa também a marca no token
+  if(!v&&ttMesa&&TT_ST.cena&&npcHere(s)){ const t=TT_ST.toks[ttKey(s.id)]; if(t&&t.oculto) try{ ttMesa.definirOculto(s.id,false); }catch(e){} }
+  saveNow(s);
+}
+Object.assign(A,{
+  iniHide(el){ const s=sh_(el); if(!s||!isGM()||s.kind!=='npc') return; const v=!ttHidden(s.id); npcSetHidden(s,v);
+    toast(v?`${s.name||'NPC'} está oculto dos jogadores.`:`${s.name||'NPC'} agora aparece para os jogadores.`); render(); }
+});
+Object.assign(CH,{
+  npcCena(el){ const s=sheetById(el.dataset.id); if(!s||!isGM()) return; s.cena=el.value||null; saveNow(s);
+    toast(s.cena?`${s.name||'NPC'} luta só em: ${cenaNome(s.cena)}.`:`${s.name||'NPC'} aparece em qualquer mapa.`); render(); },
+  npcHide(el){ const s=sheetById(el.dataset.id); if(!s||!isGM()) return; npcSetHidden(s,el.checked); render(); },
+  mkHide(el){ S.mk.hide=el.checked; }
+});
 
 /* ===== Início ===== */
 (async function boot(){
