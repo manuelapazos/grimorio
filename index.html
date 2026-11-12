@@ -746,6 +746,9 @@ body.bm-fullscreen{overflow:hidden;}
 .bm-vp.panning{cursor:grabbing;}
 .bm-mundo{position:absolute;left:0;top:0;transform-origin:0 0;}
 .bm-mapa{position:absolute;user-select:none;pointer-events:auto;max-width:none;box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 20px 60px rgba(0,0,0,.6);}
+.bm-mapa-vid{position:absolute;display:none;user-select:none;pointer-events:auto;max-width:none;object-fit:fill;box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 20px 60px rgba(0,0,0,.6);}
+.bm.ajustando .bm-mapa-vid{cursor:move;outline:2px dashed var(--tt-destaque);}
+.bm.terremoto .bm-mapa-vid{animation:bmTremor .42s linear infinite;}
 .bm.ajustando .bm-mapa{cursor:move;outline:2px dashed var(--tt-destaque);}
 .bm-mundo.sem-mapa .bm-grade{background-color:#2a2119;}
 .bm-grade{position:absolute;pointer-events:none;}
@@ -1376,6 +1379,15 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
 .icon-btn.ini-eye:hover,.icon-btn.ini-eye.on{opacity:1}
 .icon-btn.ini-eye.on{color:var(--gold)}
 .ini-else{margin:.2rem 0 0;padding:0 .2rem}
+
+.camp-head h1 .camp-edit{vertical-align:middle;margin-left:.3rem;opacity:.65}
+.camp-head h1 .camp-edit:hover{opacity:1}
+
+/* imagens das criaturas */
+.mon-picker .sp-head{align-items:center}
+.mon-thumb{width:44px;height:44px;flex:none;object-fit:contain;border-radius:6px;background:rgba(0,0,0,.05);display:block}
+.mon-art{float:right;width:min(42%,220px);max-height:260px;object-fit:contain;margin:0 0 .6rem .9rem}
+@media (max-width:560px){.mon-thumb{width:36px;height:36px}.mon-art{float:none;display:block;margin:0 auto .6rem;width:60%}}
 </style></head><body><div id="app"></div><div id="ttHost" class="tt-host" hidden></div><div id="bubble" class="bubble"></div><div id="modal"></div><div id="tray" class="tray"></div><div id="spot"></div><div class="toasts" id="toasts" aria-live="polite"></div><script>
 /*!
  * Tabletop 1.0 — mapa de batalha reutilizável (cenas, mapas, grade, tokens, régua, desenho,
@@ -1554,7 +1566,95 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
       Object.keys(tema).forEach(k=> el.style.setProperty(k.startsWith('--') ? k : '--tt-' + k, tema[k]));
     }
     /* lê a imagem do mapa, reduz até caber no limite (padrão ~900 KB, por causa do 1 MB por documento do Firestore) */
+
+    /* Grimório: mapas animados (GIF, WebM, MP4).
+       Arquivo pequeno vai como está; arquivo grande é regravado no navegador em WebM menor (resolução e taxa de bits reduzidas).
+       Como o Firestore aceita até 1 MB por documento, o mapa é guardado em pedaços: battlemapImgs/{chave} + {chave}~p1, ~p2… */
+    const BM_ANIM_MAX = OPC.limiteMapaAnimado || 3500000;      // tamanho final máximo (em caracteres do data URL)
+    const BM_ANIM_DIM = OPC.tamanhoMaxMapaAnimado || 1280;      // maior lado depois de otimizar
+    const BM_ANIM_SEG = OPC.duracaoMaxMapaAnimado || 20;        // segundos gravados de um vídeo longo
+    const bmEhVideo = u=> typeof u==='string' && u.startsWith('data:video');
+    function bmLerDataURL(blob){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=()=>rej(new Error('Falha ao ler o arquivo.')); fr.readAsDataURL(blob); }); }
+    function bmTipoGravacao(){
+      const MR = window.MediaRecorder; if(!MR) return null;
+      return ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'].find(t=>{ try{ return MR.isTypeSupported(t); }catch(e){ return false; } }) || null;
+    }
+    /* desenha a animação num canvas e grava o canvas (tempo real: um mapa de 10 s leva ~10 s para otimizar) */
+    async function bmRegravar(file, escala, kbps){
+      const tipo = bmTipoGravacao(); if(!tipo) throw new Error('Este navegador não consegue otimizar vídeos. Envie um arquivo menor.');
+      const ehGif = file.type === 'image/gif';
+      const url = URL.createObjectURL(file);
+      try{
+        let fonte, w, h, dur, quadros = null;
+        if(ehGif && window.ImageDecoder){
+          const dec = new ImageDecoder({data: await file.arrayBuffer(), type:'image/gif'});
+          await dec.tracks.ready; const n = dec.tracks.selectedTrack.frameCount; quadros = [];
+          for(let i=0;i<n;i++){ const r = await dec.decode({frameIndex:i}); quadros.push({img:r.image, ms:Math.max(20,(r.image.duration||100000)/1000)}); }
+          w = quadros[0].img.displayWidth; h = quadros[0].img.displayHeight; dur = quadros.reduce((a,q)=>a+q.ms,0)/1000;
+        } else if(ehGif){
+          fonte = new Image(); fonte.src = url; await fonte.decode(); w = fonte.naturalWidth; h = fonte.naturalHeight; dur = 6;
+        } else {
+          fonte = document.createElement('video'); fonte.muted = true; fonte.playsInline = true; fonte.src = url;
+          await new Promise((ok,ruim)=>{ fonte.onloadedmetadata = ok; fonte.onerror = ()=> ruim(new Error('Vídeo inválido.')); });
+          w = fonte.videoWidth; h = fonte.videoHeight; dur = Math.min(BM_ANIM_SEG, isFinite(fonte.duration) ? fonte.duration : BM_ANIM_SEG);
+        }
+        dur = Math.max(1, Math.min(BM_ANIM_SEG, dur));
+        const k = Math.min(1, (BM_ANIM_DIM*escala) / Math.max(w,h)); const cw = Math.max(2, Math.round(w*k/2)*2), ch = Math.max(2, Math.round(h*k/2)*2);
+        const c = document.createElement('canvas'); c.width = cw; c.height = ch; const ctx = c.getContext('2d');
+        const stream = c.captureStream(24); const rec = new MediaRecorder(stream, {mimeType: tipo, videoBitsPerSecond: Math.round(kbps*1000)});
+        const partes = []; rec.ondataavailable = e=>{ if(e.data && e.data.size) partes.push(e.data); };
+        const fim = new Promise(ok=> rec.onstop = ok);
+        const t0 = performance.now(); let qi = 0, qt = 0;
+        const desenhar = ()=>{
+          if(quadros){ const el = performance.now()-t0; while(qi < quadros.length-1 && el > qt + quadros[qi].ms){ qt += quadros[qi].ms; qi++; } ctx.drawImage(quadros[qi].img, 0, 0, cw, ch); }
+          else ctx.drawImage(fonte, 0, 0, cw, ch);
+        };
+        desenhar(); rec.start(500);
+        if(fonte && fonte.tagName === 'VIDEO'){ fonte.currentTime = 0; await fonte.play().catch(()=>{}); }
+        let ultimo = -1;
+        await new Promise(ok=>{ const passo = ()=>{ desenhar(); const s = (performance.now()-t0)/1000; const pc = Math.min(100, Math.floor(s/dur*4)*25);
+          if(pc !== ultimo){ ultimo = pc; toast(`🎞 Otimizando o mapa animado… ${pc}%`); }
+          if(s >= dur) return ok(); requestAnimationFrame(passo); }; requestAnimationFrame(passo); });
+        rec.stop(); await fim; if(fonte && fonte.pause) fonte.pause();
+        if(quadros) quadros.forEach(q=>{ try{ q.img.close(); }catch(e){} });
+        return await bmLerDataURL(new Blob(partes, {type: tipo.split(';')[0]}));
+      } finally { URL.revokeObjectURL(url); }
+    }
+    async function lerMapaAnimado(file){
+      const bruto = await bmLerDataURL(file);
+      const ehWebm = file.type === 'video/webm';
+      if((file.type === 'image/gif' || ehWebm) && bruto.length <= 1200000) return bruto;   // já é leve: vai como está
+      let out = await bmRegravar(file, 1, 900);
+      if(out.length > BM_ANIM_MAX) out = await bmRegravar(file, 0.75, 450);
+      if(out.length > BM_ANIM_MAX) throw new Error('Mesmo otimizado, o mapa animado ficou grande demais. Use um arquivo mais curto.');
+      return out;
+    }
+    /* mede largura e altura de imagem ou vídeo */
+    function bmMedirMapa(url){
+      return new Promise((res,rej)=>{
+        if(bmEhVideo(url)){ const v = document.createElement('video'); v.muted = true; v.onloadedmetadata = ()=> res({w:v.videoWidth, h:v.videoHeight}); v.onerror = ()=> rej(new Error('Vídeo inválido.')); v.src = url; }
+        else { const i = new Image(); i.onload = ()=> res({w:i.naturalWidth, h:i.naturalHeight}); i.onerror = ()=> rej(new Error('Imagem inválida.')); i.src = url; }
+      });
+    }
+    /* grava a imagem do mapa, em pedaços se passar do limite de um documento */
+    let bmImgPartes = {};
+    function bmSalvarImg(key, url){
+      const LIM = 900000, n = Math.max(1, Math.ceil(url.length / LIM)), antes = bmImgPartes[key] || 1;
+      const col = bmCol('battlemapImgs');
+      const ps = [];
+      for(let i=1;i<n;i++) ps.push(col.doc(key+'~p'+i).set({parte: url.slice(i*LIM, (i+1)*LIM)}));
+      return Promise.all(ps).then(()=> col.doc(key).set(n>1 ? {data: url.slice(0, LIM), partes: n} : {data: url})).then(()=>{
+        for(let i=n;i<antes;i++) col.doc(key+'~p'+i).delete().catch(()=>{});
+        bmImgPartes[key] = n;
+      });
+    }
+    function bmApagarImg(key){
+      const col = bmCol('battlemapImgs'), n = bmImgPartes[key] || 1;
+      col.doc(key).delete().catch(()=>{}); for(let i=1;i<n;i++) col.doc(key+'~p'+i).delete().catch(()=>{});
+      delete bmImgPartes[key];
+    }
     function lerImagemMapa(file){
+      if(file && (file.type === 'image/gif' || /^video\//.test(file.type))) return lerMapaAnimado(file);
       const limite = OPC.limiteImagem || 900000, maxDim = OPC.tamanhoMaxMapa || 2000;
       return new Promise((res, rej)=>{
         const fr = new FileReader();
@@ -1655,7 +1755,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
       const mapas = bmMigrarMapas(cid); const m = mapas[mid]; if(!m) return;
       if(!confirm(`Excluir o mapa "${m.nome||'Mapa'}" desta cena? Tokens e desenhos continuam na cena.`)) return;
       delete mapas[mid];
-      bmCol('battlemapImgs').doc(bmImgKeyDe(cid, m)).delete().catch(()=>{});
+      bmApagarImg(bmImgKeyDe(cid, m));
       const resto = Object.keys(mapas).sort((a,b)=> (mapas[a].criadoEm||0)-(mapas[b].criadoEm||0));
       bmView.cena = null; bmAjustandoMapa = false;
       bmSalvarCena(cid, {mapas, mapaAtivo: resto[0] || null, temImagem: false});
@@ -1674,7 +1774,9 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
         if(sig !== ultimaSigTurno){ ultimaSigTurno = sig; if(OPC.aoMudarTurno) try{ OPC.aoMudarTurno({turno: bmConfig.turno||null, rodada: bmConfig.rodada||1, livre: !!bmConfig.livre}); }catch(e){ console.error(e); } }
       }));
       bmUnsubs.push(bmCol('battlemapTokens').onSnapshot(snap=>{ const n = {}; snap.forEach(doc=> n[doc.id] = doc.data()); bmTokens = n; bmAgendar(); }));
-      bmUnsubs.push(bmCol('battlemapImgs').onSnapshot(snap=>{ const n = {}; snap.forEach(doc=>{ const d = doc.data(); if(d && d.data) n[doc.id] = d.data; }); bmImgs = n; bmAgendar(); }));
+      bmUnsubs.push(bmCol('battlemapImgs').onSnapshot(snap=>{ const n = {}, partes = {}, qtd = {}; snap.forEach(doc=>{ const d = doc.data(); if(!d) return; if(d.parte!=null) partes[doc.id] = d.parte; else if(d.data){ n[doc.id] = d.data; qtd[doc.id] = d.partes||1; } });
+        Object.keys(qtd).forEach(k=>{ if(qtd[k]>1){ let u = n[k]; for(let i=1;i<qtd[k];i++){ const p = partes[k+'~p'+i]; if(p==null){ u = null; break; } u += p; } if(u) n[k] = u; else delete n[k]; } });
+        bmImgPartes = qtd; bmImgs = n; bmAgendar(); }));
       bmUnsubs.push(bmCol('battlemapDesenhos').onSnapshot(snap=>{ const n = {}; snap.forEach(doc=> n[doc.id] = doc.data()); bmDesenhos = n; bmRenderDesenhos(); }));
       bmUnsubs.push(bmCol('battlemapPings').onSnapshot(snap=>{
         snap.forEach(doc=>{
@@ -1704,12 +1806,12 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
       bmAgendar();
     }
     function bmEscolherImagem(cenaId, novo){
-      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*,video/webm,video/mp4';
       inp.addEventListener('change', ()=>{
         const file = inp.files[0]; if(!file) return;
-        lerImagemMapa(file).then(url=>{
-          const img = new Image();
-          img.onload = ()=>{
+        lerImagemMapa(file).then(url=> bmMedirMapa(url).then(med=>{
+          const img = {naturalWidth: med.w, naturalHeight: med.h};
+          {
             const cena = bmConfig.cenas[cenaId] || {};
             const larg = Math.max(10, Math.min(50, Math.round(img.naturalWidth / BM_CELL)));
             const jaTem = bmMapasLista(cena).length > 0;
@@ -1719,19 +1821,18 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
               const nomeArq = (file.name||'').replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim().slice(0,40);
               mapas[mid] = {nome: nomeArq || `Mapa ${Object.keys(mapas).length+1}`, imgKey:key, temImagem:true, imgW:img.naturalWidth, imgH:img.naturalHeight, mapaW:larg, mapaX:0, mapaY:0, criadoEm:Date.now()};
               bmImgs[key] = url;
-              bmCol('battlemapImgs').doc(key).set({data:url}).catch(err=> toast('Erro: '+err.message));
+              bmSalvarImg(key, url).catch(err=> toast('Erro: '+err.message));
               bmSalvarCena(cenaId, {mapas, mapaAtivo: mid});
             } else {
               const m = bmMapa(cena) || {}; const key = bmImgKey(cenaId, cena);
               bmImgs[key] = url;
-              bmCol('battlemapImgs').doc(key).set({data:url}).catch(err=> toast('Erro: '+err.message));
+              bmSalvarImg(key, url).catch(err=> toast('Erro: '+err.message));
               bmSalvarMapa(cenaId, {temImagem:true, imgW:img.naturalWidth, imgH:img.naturalHeight, mapaW: m.temImagem ? (m.mapaW||larg) : larg, mapaX:m.mapaX||0, mapaY:m.mapaY||0});
             }
             bmView.cena = null; bmAjustandoMapa = true; bmAgendar();
-            toast('🗺 Mapa carregado. Ajuste a largura em quadrados até a grade bater com o desenho.');
-          };
-          img.src = url;
-        }).catch(e=>{ if(e && e.cancelado) return; toast('Não foi possível carregar o mapa.'); });
+            toast(bmEhVideo(url) || /^data:image\/gif/.test(url) ? '🎞 Mapa animado carregado. Ajuste a largura em quadrados até a grade bater com o desenho.' : '🗺 Mapa carregado. Ajuste a largura em quadrados até a grade bater com o desenho.');
+          }
+        })).catch(e=>{ if(e && e.cancelado) return; toast(e && e.message && /grande|navegador|inválid/.test(e.message) ? e.message : 'Não foi possível carregar o mapa.'); });
       });
       inp.click();
     }
@@ -1817,7 +1918,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
         <header class="bm-barra"></header>
         <div class="bm-corpo">
           <div class="bm-vp" tabindex="0">
-            <div class="bm-mundo"><img class="bm-mapa" alt="" draggable="false"><div class="bm-grade"></div><svg class="bm-desenhos" overflow="visible" viewBox="-4000 -4000 16000 16000"></svg><svg class="bm-escuro" overflow="visible"></svg><svg class="bm-medida" overflow="visible"></svg><div class="bm-tokens"></div><svg class="bm-nevoa" overflow="visible"></svg><div class="bm-pings"></div></div>
+            <div class="bm-mundo"><img class="bm-mapa" alt="" draggable="false"><video class="bm-mapa-vid" muted loop autoplay playsinline disablepictureinpicture></video><div class="bm-grade"></div><svg class="bm-desenhos" overflow="visible" viewBox="-4000 -4000 16000 16000"></svg><svg class="bm-escuro" overflow="visible"></svg><svg class="bm-medida" overflow="visible"></svg><div class="bm-tokens"></div><svg class="bm-nevoa" overflow="visible"></svg><div class="bm-pings"></div></div>
             <div class="bm-noite"></div><canvas class="bm-clima"></canvas><div class="bm-relampago"></div>
             <nav class="bm-trilho" aria-label="Ferramentas"></nav>
             <div class="bm-sub"></div>
@@ -1927,11 +2028,18 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
       const imgEl = mundo.querySelector('.bm-mapa');
       const mapaAt = bmMapa(cena);
       const url = mapaAt && mapaAt.temImagem ? bmImgs[bmImgKey(bmConfig.cenaAtiva, cena)] : null;
-      if(url){
+      const vidEl = mundo.querySelector('.bm-mapa-vid');
+      if(url && bmEhVideo(url)){
+        imgEl.removeAttribute('src'); imgEl.style.display = 'none';
+        if(vidEl.getAttribute('src')!==url){ vidEl.setAttribute('src', url); vidEl.muted = true; vidEl.play().catch(()=>{}); }
+        const L = bmLimites(cena);
+        Object.assign(vidEl.style, {display:'block', left:L.x+'px', top:L.y+'px', width:L.w+'px', height:L.h+'px'});
+      } else if(url){
+        if(vidEl.getAttribute('src')){ vidEl.removeAttribute('src'); vidEl.load(); } vidEl.style.display = 'none';
         if(imgEl.getAttribute('src')!==url) imgEl.setAttribute('src', url);
         const L = bmLimites(cena);
         Object.assign(imgEl.style, {display:'block', left:L.x+'px', top:L.y+'px', width:L.w+'px', height:L.h+'px'});
-      } else { imgEl.removeAttribute('src'); imgEl.style.display = 'none'; }
+      } else { imgEl.removeAttribute('src'); imgEl.style.display = 'none'; if(vidEl.getAttribute('src')){ vidEl.removeAttribute('src'); vidEl.load(); } vidEl.style.display = 'none'; }
       const grade = mundo.querySelector('.bm-grade');
       if(cena){
         const g = Object.assign(bmGradePadrao(), cena.grade||{});
@@ -2150,9 +2258,9 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
         const lista = bmMapasLista(cena); const ativo = bmMapaAtivoId(cena);
         box.innerHTML = `<div class="ui-dialog-head"><h3>🗺 Mapas de “${escapeHtml(cena.nome||'Cena')}”</h3><button class="icon-btn" data-x>✕</button></div>
           <p class="ui-hint">Clique num mapa para mostrá-lo na mesa. Tokens, desenhos e névoa continuam os mesmos dentro da cena.</p>
-          <div class="bm-gal-grid">${lista.map(([id,m])=>{ const src = bmImgs[bmImgKeyDe(cid, m)];
+          <div class="bm-gal-grid">${lista.map(([id,m])=>{ const src0 = bmImgs[bmImgKeyDe(cid, m)]; const src = bmEhVideo(src0) ? null : src0; const ehVid = bmEhVideo(src0);
             return `<div class="bm-gal-item ${id===ativo?'on':''}" data-galmapa="${id}">
-              <div class="bm-gal-img">${src?`<img src="${src}" alt="">`:'<span>sem imagem</span>'}${id===ativo?'<em>Na mesa</em>':''}</div>
+              <div class="bm-gal-img">${src?`<img src="${src}" alt="">`:ehVid?'<span>🎞 mapa animado</span>':'<span>sem imagem</span>'}${id===ativo?'<em>Na mesa</em>':''}</div>
               <div class="bm-gal-rod"><input type="text" value="${escapeHtml(m.nome||'Mapa')}" data-galnome="${id}" title="Renomear"><button type="button" class="icon-btn" data-galdel="${id}" title="Excluir mapa">🗑</button></div>
             </div>`; }).join('')}
             <button type="button" class="bm-gal-item novo" data-galnovo><span>＋</span>Enviar novo mapa</button>
@@ -2200,7 +2308,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
         </div>
         <div class="bm-box"><h5>Mapas <button type="button" class="bm-h5-btn" data-bmgaleria title="Abrir a galeria de mapas da cena">🖼 Galeria</button></h5>
           ${mapasL.length ? `<div class="bm-mapas-lista">${mapasL.map(([id,m])=> `<div class="bm-mapa-it ${id===mapaIdP?'on':''}">
-              <button type="button" class="bm-mapa-nome" data-bmmapair="${id}" title="Mostrar este mapa">${bmImgs[bmImgKeyDe(bmConfig.cenaAtiva, m)] ? `<img src="${bmImgs[bmImgKeyDe(bmConfig.cenaAtiva, m)]}" alt="">` : '<i></i>'}<span>${escapeHtml(m.nome||'Mapa')}</span></button>
+              <button type="button" class="bm-mapa-nome" data-bmmapair="${id}" title="Mostrar este mapa">${bmImgs[bmImgKeyDe(bmConfig.cenaAtiva, m)] && !bmEhVideo(bmImgs[bmImgKeyDe(bmConfig.cenaAtiva, m)]) ? `<img src="${bmImgs[bmImgKeyDe(bmConfig.cenaAtiva, m)]}" alt="">` : bmImgs[bmImgKeyDe(bmConfig.cenaAtiva, m)] ? '<i>🎞</i>' : '<i></i>'}<span>${escapeHtml(m.nome||'Mapa')}</span></button>
               <button type="button" class="bm-mapa-ren" data-bmmaparen="${id}" title="Renomear">✎</button></div>`).join('')}</div>` : '<p class="bm-dica-txt">Esta cena ainda não tem mapa — só a grade.</p>'}
           <div class="bm-linha"><button type="button" class="btn btn-mini" data-bmmapanovo>＋ Novo mapa</button>${mapaAtP && mapaAtP.temImagem ? `<button type="button" class="btn btn-mini ghost" data-bmmapa title="Trocar a imagem do mapa atual">⟳ Trocar imagem</button>` : ''}</div>
         </div>
@@ -2301,7 +2409,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
         const cenas = Object.assign({}, bmConfig.cenas); delete cenas[cid];
         const prox = Object.keys(cenas)[0] || null;
         bmCol('battlemap').doc('config').set({cenas, cenaAtiva: prox}, {merge:true}).catch(()=>{});
-        Object.keys(bmImgs).concat([cid]).filter(k=> k===cid || k.startsWith(cid+'__')).forEach(k=> bmCol('battlemapImgs').doc(k).delete().catch(()=>{}));
+        Object.keys(bmImgs).concat([cid]).filter(k=> k===cid || k.startsWith(cid+'__')).forEach(k=> bmApagarImg(k));
         Object.keys(bmTokens).filter(k=> k.startsWith(cid+'__')).forEach(k=> bmCol('battlemapTokens').doc(k).delete().catch(()=>{}));
         Object.keys(bmDesenhos).filter(k=> bmDesenhos[k].cena===cid).forEach(k=> bmCol('battlemapDesenhos').doc(k).delete().catch(()=>{}));
         bmConfig.cenas = cenas; bmConfig.cenaAtiva = prox; bmView.cena = null; bmSel = null; bmRender();
@@ -2440,7 +2548,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
             return;
           }
         }
-        if(!panFor && bmAjustandoMapa && bmEhMestre() && ev.target.classList.contains('bm-mapa')){
+        if(!panFor && bmAjustandoMapa && bmEhMestre() && (ev.target.classList.contains('bm-mapa') || ev.target.classList.contains('bm-mapa-vid'))){
           const c = bmCena(); bmArrasto = {tipo:'mapa', sx:w.x, sy:w.y, mx:c.mapaX||0, my:c.mapaY||0}; return;
         }
         if(!tkEl && bmSel && !panFor){ bmSel = null; bmRender(); }
@@ -2474,7 +2582,7 @@ body{-webkit-tap-highlight-color:rgba(201,162,78,.18)}
         }
         if(bmArrasto.tipo==='mapa'){
           const c = bmMapa(bmCena()); c.mapaX = Math.round((bmArrasto.mx + (w.x-bmArrasto.sx)/BM_CELL)*100)/100; c.mapaY = Math.round((bmArrasto.my + (w.y-bmArrasto.sy)/BM_CELL)*100)/100;
-          const L = bmLimites(bmCena()); const img = vp.querySelector('.bm-mapa'); img.style.left = L.x+'px'; img.style.top = L.y+'px'; return;
+          const L = bmLimites(bmCena()); vp.querySelectorAll('.bm-mapa, .bm-mapa-vid').forEach(img=>{ img.style.left = L.x+'px'; img.style.top = L.y+'px'; }); return;
         }
         if(bmArrasto.tipo==='token' && bmArrasto.el){
           const nx = (w.x - bmArrasto.ox)/BM_CELL, ny = (w.y - bmArrasto.oy)/BM_CELL;
@@ -3240,6 +3348,7 @@ const IC = {
   back:'<svg viewBox="0 0 24 24" class="i"><path d="M15 5 8 12l7 7"/></svg>',
   x:'<svg viewBox="0 0 24 24" class="i"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   min:'<svg viewBox="0 0 24 24" class="i"><path d="M6 12h12"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" class="i"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>',
   eye:'<svg viewBox="0 0 24 24" class="i"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
   eyeOff:'<svg viewBox="0 0 24 24" class="i"><path d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
   copy:'<svg viewBox="0 0 24 24" class="i"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></svg>',
@@ -3251,7 +3360,15 @@ const IC = {
 
 /* ===== Dados vindos do banco: nunca confiar no formato ===== */
 const num=v=>{ const n=Number(v); return isFinite(n)?n:0; };
-function safeImg(u){ u=typeof u==='string'?u:''; return /^data:image\/(png|jpe?g|webp|gif);base64,/.test(u)&&!/["'<>\s()\\]/.test(u)?u:''; }
+/* ===== Imagens das criaturas =====
+   Os arquivos ficam na pasta 'criaturas/' ao lado deste HTML (ex.: criaturas/aarakocra.webp).
+   Para servir de outro lugar, troque o endereço abaixo por um link completo terminado em '/'. */
+const MON_ART_BASE = 'criaturas/';
+const MON_ART = new Set("aarakocra abocanhador-matraqueante abolete acoitador-kuo-toa androesfinge ankheg anomalia-da-agua aparicao aprendiz-de-mago aranha-interplanar arbusto-errante arcanaloth arcebispo-kuo-toa armadura-animada assassino azer babau balor banderhobb banshee barghest barlgura basilisco behir beijo-da-morte besouro-de-fogo-gigante bidrone boca-de-grolantor bodak bruxa-annis bruxa-da-noite bruxa-do-mar bruxa-invernal bruxa-verde bruxo-xvarti-de-raxivort bugbear bugbear-comandante bulette bullywug cacador-invisivel cambion cao-infernal cao-teleportador cao-yeti capuzcarlate caracol-mangual catoblepas cavaleiro-da-morte cavaleiro-negro cavalo-de-carga caveira-flamejante celerito centauro chasme chefe-vegepigmeu chitina choldrith chuul ciclope cocatriz comandante-de-guerra-orc contemplante couatl cria-do-mar cria-vampirica cubo-gelatinoso dao darkling-anciao demilich demonio-das-sombras deva devorador-de-intelecto devorador-de-mentes devorador-vo devoto-profundo diabo-barbado diabo-das-correntes diabo-de-chifres diabo-do-gelo diabo-dos-espinhos diabo-dos-ossos diabo-farpado diabrete djinni dracolich-azul-adulto draegloth dragao-azul-adulto dragao-azul-anciao dragao-azul-filhote dragao-azul-jovem dragao-branco-adulto dragao-branco-anciao dragao-branco-filhote dragao-branco-jovem dragao-de-bronze-adulto dragao-de-bronze-anciao dragao-de-bronze-filhote dragao-de-bronze-jovem dragao-de-cobre-adulto dragao-de-cobre-anciao dragao-de-cobre-filhote dragao-de-cobre-jovem dragao-de-latao-adulto dragao-de-latao-anciao dragao-de-latao-filhote dragao-de-latao-jovem dragao-de-ouro-adulto dragao-de-ouro-anciao dragao-de-ouro-filhote dragao-de-ouro-jovem dragao-de-prata-adulto dragao-de-prata-anciao dragao-de-prata-filhote dragao-de-prata-jovem dragao-fada dragao-negro-adulto dragao-negro-anciao dragao-negro-filhote dragao-negro-jovem dragao-verde-adulto dragao-verde-anciao dragao-verde-filhote dragao-verde-jovem dragao-vermelho-adulto dragao-vermelho-anciao dragao-vermelho-das-sombras-jovem dragao-vermelho-filhote dragao-vermelho-jovem dretch driade drider drow drow-arcano drow-guerreiro-de-elite drow-sacerdotisa-de-lolth duergar duplo efreeti elemental-da-agua elemental-da-terra elemental-do-ar elemental-do-fogo empirico ente erinia espada-voadora espadachin espantalho espectador espectro espinhoso esqueleto esqueleto-de-cavalo-de-guerra esqueleto-de-minotauro estrangulador ettercap ettin falcao fantasma flind flumph fomori froghemoth galeb-duhr gargula garra-rastejante gigante-da-colina gigante-da-tempestade gigante-das-nuvens gigante-das-nuvens-sorridente gigante-de-pedra gigante-de-pedra-sonhador gigante-do-fogo gigante-do-fogo-encouracado gigante-do-gelo gigante-do-gelo-eterno ginoesfinge girallon glabrezu gladiador gnoll gnoll-cacador gnoll-lider-de-matilha gnoll-livido gnoll-presa-de-yeenoghu gnomo-das-profundezas-svirfneblin goblin golem-de-barro golem-de-carne golem-de-ferro golem-de-pedra gorgon goristro gosma-ocre grell grick grick-alfa grifo grimlock guarda-dragonete guardiao-do-escudo guerreiro-firenewr guerreiro-githyanki harpia hezrou hidra hipogrifo hobgoblin hobgoblin-capitao hobgoblin-devastador hobgoblin-senhor-da-guerra hobgoblin-sombra-de-ferro homem-chacal homem-javali homem-rato homem-tigre homem-urso homunculo horror-de-elmo horror-de-gancho inumano kenku kobold kobold-alado kobold-escudo-de-dragao kobold-feiticeiro-escamoso kobold-inventor korred kuo-toa ladrao-mestre lamia larva-slaad lemure lich limo-cinzento livido lobisomem lobo-atroz magmin manes manticora manto-negro mantor marid marilith mastim-das-sombras medusa meenlock meio-dragao-vermelho-veterano meio-ogro mentetestemunha mephit-da-fumaca mephit-da-lama mephit-da-poeira mephit-do-gelo mephit-do-magma mephit-do-vapor mezzoloth miconide-adulto miconide-broto miconide-soberano mimico minotauro monodrone monstro-da-ferrugem mumia naga-dos-ossos naga-espiritual naga-guardia nalfeshnee neogi-filhote neothelideo nilbog notico nycaloth observador observador-zumbi ogro ogro-zumbi oni orc-garra-de-luthic orc-maculado-de-yurtrus orc-mao-de-yurtrus orog otyugh pantera-deslocadora pegaso pentadrone perfurador peryton pesadelo pescador-de-cavernas pixie planetario plebeu povo-do-mar povo-lagarto pseudodragao pudim-negro quadrone quaggoth quasit quimera rakshasa rastreador-rastejante rato-craniano remorhaz remorhaz-jovem ressurgido roca sacerdote-kraken sacerdotisa-sahuagin sahuagin salamandra saltarelo-gigante satiro senhor-das-mumias senhor-das-profundezas serpente-de-fogo shoosuva sirenideo slaad-azul slaad-cinza slaad-da-morte slaad-verde slaad-vermelho solar sombra stirge sucubo-incubo tanarukk tapete-sufocador tarrasque tartaruga-dragao terrifico thri-kreen tirano-da-morte tlincalli tribulo-brutal tridrone troglodita troll ulitharid ultroloth unicornio urso-coruja vaca vargouille verme-da-carnica verme-purpura vrock wyvern xorn yeti yochlol yuan-ti-abominacao yuan-ti-anatema yuan-ti-guarda-da-ninhada yuan-ti-mestico yuan-ti-murmurador-da-mente yuan-ti-oradora-de-pesadelos yuan-ti-puro-sangue yuan-ti-senhor-do-abismo zerth-githzerai zumbi".split(' '));
+const artSlug = n=> String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+function monArtUrl(m){ if(!m) return ''; const dup=m.s==='vo'&&MON_ART.has(artSlug(m.n)+'-vo'); const k=artSlug(m.n)+(dup?'-vo':''); return MON_ART.has(k)?MON_ART_BASE+k+'.webp':''; }
+const isArtUrl = u=> typeof u==='string'&&u.startsWith(MON_ART_BASE)&&/^[\w\-.\/:@%]+\.webp$/.test(u)&&!/\.\./.test(u.slice(MON_ART_BASE.length));
+function safeImg(u){ u=typeof u==='string'?u:''; if(isArtUrl(u)) return u; return /^data:image\/(png|jpe?g|webp|gif);base64,/.test(u)&&!/["'<>\s()\\]/.test(u)?u:''; }
 function cleanParts(ps){ return Array.isArray(ps)?ps.map(p=>p&&p.k!==undefined&&p.k!==null?{s:num(p.s)<0?-1:1,k:num(p.k)}:{s:num(p&&p.s)<0?-1:1,d:num(p&&p.d),r:(p&&Array.isArray(p.r)?p.r:[]).map(num),x:(p&&Array.isArray(p.x)?p.x:[]).map(num)}):[]; }
 function cleanRoll(r){
   const o={...r,ts:num(r.ts),total:num(r.total),nat:r.nat==null?null:num(r.nat),lvl:num(r.lvl),slot:r.slot==null?null:num(r.slot),parts:cleanParts(r.parts),
@@ -4083,7 +4200,7 @@ function campCard(c){
       <div class="meta">${gm?`Código <span class="code-chip">${h(c.code)}</span> · ${np} jogador${np===1?'':'es'}`:`Mestre: ${h(c.gmName||'')}`}</div>
       ${c.desc?`<p class="small muted" style="margin:0">${h(c.desc)}</p>`:''}
       <div class="foot"><button class="btn primary sm" data-act="openCamp" data-id="${c.id}">Abrir mesa</button>
-      ${gm?`<button class="btn sm" data-act="coverModal" data-id="${c.id}">${IC.img} Capa</button><button class="btn danger sm" data-act="delCamp" data-id="${c.id}">Excluir</button>`
+      ${gm?`<button class="btn sm" data-act="editCampModal" data-id="${c.id}">${IC.edit} Editar</button><button class="btn sm" data-act="coverModal" data-id="${c.id}">${IC.img} Capa</button><button class="btn danger sm" data-act="delCamp" data-id="${c.id}">Excluir</button>`
         :`<button class="btn danger sm" data-act="leaveCampBtn" data-id="${c.id}">Sair da campanha</button>`}</div></div></article>`;
 }
 
@@ -4095,7 +4212,7 @@ function viewCamp(){
   if(S.campTab==='map') return `<main class="wrap wrap-map">${mapHead()}${viewCombat()}</main>`;
   return `<main class="wrap ${S.campTab==='map'?'wrap-map':''}">
     <section class="camp-head"><div class="cover">${coverHTML(c)}</div>
-      <div><h1>${h(c.name)}</h1><p class="muted" style="margin:.3rem 0 0">${c.desc?h(c.desc)+' · ':''}Mestre: ${h(c.gmName)}</p>
+      <div><h1>${h(c.name)}${gm?` <button class="icon-btn camp-edit" data-act="editCampModal" data-id="${c.id}" title="Editar nome e descrição" aria-label="Editar nome e descrição da campanha">${IC.edit}</button>`:''}</h1><p class="muted" style="margin:.3rem 0 0">${c.desc?h(c.desc)+' · ':''}Mestre: ${h(c.gmName)}</p>
       <div class="row" style="margin-top:.8rem"><button class="btn ghost sm" data-act="home">${IC.back} Todas as campanhas</button></div></div></section>
     <nav class="ribbons" role="tablist">${gm?`<button class="ribbon" role="tab" aria-selected="${S.campTab==='gm'}" data-act="campTab" data-v="gm">Área do Mestre</button>`:''}
       <button class="ribbon" role="tab" aria-selected="${S.campTab==='players'}" data-act="campTab" data-v="players">Área dos Jogadores</button>
@@ -4420,6 +4537,11 @@ function renderModal(){
   if(m.type==='join') inner=`<form class="modal" data-form="join"><h2>Entrar em Campanha</h2><p class="muted">Digite o código de 6 caracteres que o mestre passou.</p>
     <div class="field"><label for="jc">Código</label><input class="inp" id="jc" maxlength="8" autocomplete="off" style="font-family:var(--fd);font-size:1.8rem;letter-spacing:.25em;text-transform:uppercase" autofocus></div>
     <div class="err-msg" id="mErr" role="alert"></div><div class="foot"><button type="button" class="btn ghost" data-act="closeModal">Cancelar</button><button class="btn primary" type="submit">Entrar</button></div></form>`;
+  else if(m.type==='editCamp'){ const c=S.camps.find(x=>x.id===m.cid)||(S.camp&&S.camp.id===m.cid?S.camp:null)||{};
+    inner=`<form class="modal" data-form="editCamp"><h2>Editar Campanha</h2><p class="muted">O novo nome aparece para todos os jogadores. O código da campanha não muda.</p>
+    <div class="field"><label for="en">Nome</label><input class="inp" id="en" maxlength="60" value="${h(c.name||'')}" autofocus></div>
+    <div class="field"><label for="ed">Descrição curta (opcional)</label><input class="inp" id="ed" maxlength="140" value="${h(c.desc||'')}"></div>
+    <div class="err-msg" id="mErr" role="alert"></div><div class="foot"><button type="button" class="btn ghost" data-act="closeModal">Cancelar</button><button class="btn primary" type="submit">Salvar</button></div></form>`; }
   else if(m.type==='create') inner=`<form class="modal" data-form="create"><h2>Criar Campanha</h2><p class="muted">Você será o mestre. A campanha recebe um código para os jogadores entrarem.</p>
     <div class="field"><label for="cn">Nome</label><input class="inp" id="cn" maxlength="60" placeholder="A Mina Perdida de Phandelver" autofocus></div>
     <div class="field"><label for="cd">Descrição curta (opcional)</label><input class="inp" id="cd" maxlength="140" placeholder="Nível 1 a 5, às sextas"></div>
@@ -4762,6 +4884,7 @@ const A = {
   lobbyTab(el){ S.lobbyTab=el.dataset.v; render(); },
   joinModal(){ openModal({type:'join'}); }, createModal(){ openModal({type:'create'}); },
   openCamp(el){ openCamp(el.dataset.id); window.scrollTo(0,0); },
+  editCampModal(el){ openModal({type:'editCamp',cid:el.dataset.id}); },
   coverModal(el){ const cid=el.dataset.id; openModal({type:'cover',cid,src:S.covers[cid]?S.covers[cid].img:null}); },
   saveCover(){ saveCover(); },
   portraitModal(el){ const s=sh_(el); openModal({type:'portrait',sid:s.id,src:s.portrait||null}); },
@@ -5034,6 +5157,12 @@ document.addEventListener('submit',async e=>{
   try{
     if(kind==='join'){ const cid=await joinCampaign($('#jc').value); closeModal(); toast('Você entrou na campanha.'); S.camps.find(c=>c.id===cid)||S.camps.push(await Store.get('campaigns/'+cid)); openCamp(cid); }
     if(kind==='create'){ const cid=await createCampaign($('#cn').value,$('#cd').value); closeModal(); S.camps.find(c=>c.id===cid)||S.camps.push(await Store.get('campaigns/'+cid)); openCamp(cid); toast('Campanha criada. Passe o código aos jogadores.'); }
+    if(kind==='editCamp'){ const cid=S.modal.cid, name=$('#en').value.trim(), desc=$('#ed').value.trim();
+      if(!name) throw new Error('Dê um nome à campanha.');
+      const c0=S.camps.find(x=>x.id===cid)||(S.camp&&S.camp.id===cid?S.camp:null); if(!c0||c0.gmId!==S.me.id) throw new Error('Só o mestre pode editar a campanha.');
+      await Store.update('campaigns/'+cid,{name,desc});
+      S.camps.forEach(x=>{ if(x.id===cid){ x.name=name; x.desc=desc; } }); if(S.camp&&S.camp.id===cid){ S.camp.name=name; S.camp.desc=desc; }
+      closeModal(); toast('Campanha atualizada.'); render(); }
     if(kind==='level'){ const s=sheetById(S.modal.sid); s.level=+$('#lv').value; if($('#lvxp').checked) s.xp=Math.max(+s.xp||0,XP_T[s.level-1]); saveNow(s); closeModal(); render(); }
   }catch(x){ if(err) err.textContent=x.message||'Algo deu errado. Tente de novo.'; }
 });
@@ -5110,7 +5239,11 @@ function ttClean(col,d){
     o.luz=typeof d.luz==='string'&&TT_LUZES[d.luz]?d.luz:null; o.oculto=!!d.oculto;
     return o;
   }
-  if(col.endsWith('battlemapImgs')){ const u=typeof d.data==='string'&&/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(d.data)?d.data:null; return u?{data:u}:{}; }
+  if(col.endsWith('battlemapImgs')){
+    // mapa animado: data:video/webm|mp4; mapas grandes vêm em pedaços (doc principal com "partes" + docs "<chave>~pN" com "parte")
+    if(typeof d.parte==='string') return /^[A-Za-z0-9+/=]+$/.test(d.parte)?{parte:d.parte}:{};
+    const u=typeof d.data==='string'&&/^data:(image\/(png|jpe?g|webp|gif)|video\/(webm|mp4));base64,[A-Za-z0-9+/=]+$/.test(d.data)?d.data:null;
+    if(!u) return {}; const n=Math.round(ttNum(d.partes,1)); return n>1&&n<=12?{data:u,partes:n}:{data:u}; }
   if(col.endsWith('battlemap')){ const o=clone(d); if('turno' in o) o.turno=ttId(o.turno); if('rodada' in o) o.rodada=Math.max(1,Math.round(ttNum(o.rodada,1))); if('cenaAtiva' in o) o.cenaAtiva=ttId(o.cenaAtiva); o.livre=!!o.livre; return o; }
   return d;
 }
@@ -5365,7 +5498,7 @@ function monToNPC(m,name,rollHp){
   return {kind:'npc',name,meta:m.t,ac:m.ac,acNote:m.acn||'',hpMax:hp,hpCur:hp,hpFormula:m.hpf||'',speed:m.sp||'',ab,
     saves:m.sv||'',skillsTxt:m.sk||'',senses:m.se||'',langs:m.la||'',cr:m.cr,pb:m.pb||2,traits,
     actions:actions.length?actions:[],notes:`Fonte: ${MON_SRC[m.s].n}, p. ${m.p} · ND ${m.cr}${m.xp?` (${m.xp.toLocaleString('pt-BR')} XP)`:''}.`,
-    mon:{s:m.s,p:m.p},createdAt:Date.now(),updatedAt:Date.now()};
+    mon:{s:m.s,p:m.p},portrait:monArtUrl(m)||null,createdAt:Date.now(),updatedAt:Date.now()};
 }
 function monNames(base,qty){
   const re=new RegExp('^'+base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?: (\\d+))?$');
@@ -5394,10 +5527,10 @@ function viewMonPicker(){
       <span class="grow"></span><label class="small">Ordem <select class="inp" data-mk="sort" data-k="mk.sort" aria-label="Ordenar" style="width:auto;display:inline-block;padding:.25rem .4rem"><option value="">Nome</option><option value="cr" ${f.sort==='cr'?'selected':''}>Nível de desafio</option></select></label></div>
     <p class="small muted" style="margin:.4rem 0">${all.length} monstro${all.length===1?'':'s'}${all.length>list.length?` · mostrando ${list.length}`:''}</p>
     <div class="sp-list" data-scroll="mklist">${list.map(m=>{ const open=f.open===m.id, n=inCamp(m.n);
-      return `<div class="sp-row ${open?'open':''}"><div class="sp-head"><button class="sp-name" data-act="mkOpen" data-v="${m.id}" aria-expanded="${open}"><b>${h(m.n)}</b><span class="small muted">${h(m.ty)}${m.sz?' '+h(m.sz):''} · ND ${h(m.cr)} · CA ${m.ac} · PV ${m.hp}${n?` · ${n} na campanha`:''}</span></button>
+      return `<div class="sp-row ${open?'open':''}"><div class="sp-head">${monArtUrl(m)?`<img class="mon-thumb" loading="lazy" alt="" src="${monArtUrl(m)}">`:'<span class="mon-thumb"></span>'}<button class="sp-name" data-act="mkOpen" data-v="${m.id}" aria-expanded="${open}"><b>${h(m.n)}</b><span class="small muted">${h(m.ty)}${m.sz?' '+h(m.sz):''} · ND ${h(m.cr)} · CA ${m.ac} · PV ${m.hp}${n?` · ${n} na campanha`:''}</span></button>
         <span class="pill ${MON_SRC[m.s].base?'':'gold'}" title="${h(MON_SRC[m.s].n)}, p. ${m.p}">${MON_SRC[m.s].ab}</span>
         <button class="btn sm primary" data-act="mkAdd" data-v="${m.id}">${IC.plus} ${(+f.qty||1)>1?`Adicionar ${Math.min(20,+f.qty)}`:'Adicionar'}</button></div>
-        ${open?`<div class="sp-body">${monBlock(m)}</div>`:''}</div>`; }).join('')||'<p class="muted">Nenhum monstro com esses filtros.</p>'}
+        ${open?`<div class="sp-body">${monArtUrl(m)?`<img class="mon-art" loading="lazy" alt="${h(m.n)}" src="${monArtUrl(m)}">`:''}${monBlock(m)}</div>`:''}</div>`; }).join('')||'<p class="muted">Nenhum monstro com esses filtros.</p>'}
       ${all.length>list.length?`<div style="text-align:center;padding:.8rem"><button class="btn sm" data-act="mkMore">Mostrar mais</button></div>`:''}</div></div>`;
 }
 Object.assign(A,{
@@ -6369,6 +6502,7 @@ Object.assign(CH,{
   mkHide(el){ S.mk.hide=el.checked; }
 });
 
+document.addEventListener('error',e=>{ const t=e.target; if(t&&t.tagName==='IMG'&&isArtUrl(t.getAttribute('src')||'')) t.style.visibility='hidden'; },true);
 /* ===== Início ===== */
 (async function boot(){
   render();
